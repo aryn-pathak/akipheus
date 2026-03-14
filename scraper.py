@@ -9,25 +9,24 @@ endpoint_url = "https://query.wikidata.org/sparql"
 sparql = SPARQLWrapper(endpoint_url, agent="Akigator/1.0 (thearyanpathak@gmail.com) An open source educational project to recreate how Akinator (classic character guessing game) works. Uses Wikidata's database on humans instead of proprietary closed-source character information like akinator.")
 
 query = """
-SELECT ?person ?personLabel ?personDescription ?sex ?field ?occupation ?citizenship ?sitelinks (MAX(?rawCount) AS ?followers)
+SELECT ?person ?personLabel ?personDescription ?sex ?occupation ?citizenship ?sitelinks (MAX(?rawCount) AS ?followers)
 WHERE {
-  ?person wdt:P31 wd:Q5 ;
+?person   wdt:P8687 ?rawCount ;
           wdt:P21 ?sex ;
           wdt:P27 ?citizenship ;
           wdt:P106 ?occupation ;
-          wdt:P8687 ?rawCount ;
-          wdt:P101 ?field ;
-          wikibase:sitelinks ?sitelinks .
+          wikibase:sitelinks ?sitelinks ;
+          wdt:P31 wd:Q5 .
+  
+ # OPTIONAL { ?person wdt:P101 ?fieldExists . }
+ # BIND(COALESCE (?fieldExists, 'NIL') as ?field)
           
   FILTER(?sitelinks > 20)
   FILTER(?rawCount > 100000)
             
-  OPTIONAL { ?person wdt:P101 ?fieldExists . }
-  BIND(COALESCE (?fieldExists, 'NIL') as ?field)
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
 GROUP BY ?person ?personLabel ?personDescription ?sex ?field ?occupation ?citizenship ?sitelinks
-LIMIT 2
 """
 sparql.setQuery(query)
 sparql.setReturnFormat(JSON)
