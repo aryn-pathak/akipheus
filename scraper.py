@@ -5,6 +5,7 @@
 from SPARQLWrapper import SPARQLWrapper, JSON
 import json
 import pandas as pd
+import sqlite3
 
 endpoint_url = "https://query.wikidata.org/sparql"
 sparql = SPARQLWrapper(endpoint_url, agent="Akigator/1.0 (thearyanpathak@gmail.com) An open source educational project to recreate how Akinator (classic character guessing game) works. Uses Wikidata's database on humans instead of proprietary closed-source character information like akinator. Not spam, this is a one time thing but will take some time, so will require a longer timeout")
@@ -42,3 +43,6 @@ with (open('humans.json', 'w') as humans):
     json.dump(resultsList, humans, indent=4)
 
 df=pd.read_json("humans.json")
+
+con = sqlite3.connect("humans.db")
+df.to_sql("humans", con, if_exists='replace', index=False)
