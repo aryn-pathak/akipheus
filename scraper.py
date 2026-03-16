@@ -11,7 +11,7 @@ endpoint_url = "https://query.wikidata.org/sparql"
 sparql = SPARQLWrapper(endpoint_url, agent="Akigator/1.0 (thearyanpathak@gmail.com) An open source educational project to recreate how Akinator (classic character guessing game) works. Uses Wikidata's database on humans instead of proprietary closed-source character information like akinator. Not spam, this is a one time thing but will take some time, so will require a longer timeout")
 
 query = """
-SELECT ?person ?personLabel ?personDescription ?sex ?occupation ?citizenship ?sitelinks (MAX(?rawCount) AS ?followers)
+SELECT ?personLabel ?personDescription ?sex ?occupationLabel ?citizenship ?sitelinks (MAX(?rawCount) AS ?followers)
 WHERE {
 ?person   wdt:P8687 ?rawCount ;
           wdt:P21 ?sex ;
@@ -28,7 +28,7 @@ WHERE {
             
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
-GROUP BY ?person ?personLabel ?personDescription ?sex ?field ?occupation ?citizenship ?sitelinks
+GROUP BY ?personLabel ?personDescription ?sex ?field ?occupationLabel ?citizenship ?sitelinks
 """
 sparql.setQuery(query)
 sparql.setReturnFormat(JSON)
@@ -37,7 +37,10 @@ results = sparql.query().convert()
 
 resultsList = []
 for result in results["results"]["bindings"]:
-    resultsList.append(result)
+    cleanResult = {}
+    for key, inner in result.items():
+        cleanResult[key] = inner["value"]
+        resultsList.append(cleanResult)
 
 with (open('humans.json', 'w') as humans):
     json.dump(resultsList, humans, indent=4)
