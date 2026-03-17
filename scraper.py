@@ -2,16 +2,18 @@
 # akigator will only use "humans" (non-fictional humans) with >25 sitelinks (somewhat popular, not including ultra-niche people), and having a defined gender, citizenship, occupation (to filter out ghosts), and has a follower count listed
 # using a scraper means we'll get a list of entities much, much smaller than wikidata's list, and doesn't query wikidata to sort through 120M+ entities for every small question, which is abusive to them.
 
+# NOTE: THIS CODE IS ONLY FOR REFERENCE AND DOES NOT REQUIRE RUNNING AGAIN. IT HAS BEEN RUN AND RESULT STORED IN A DATABASE CALLED HUMANS INSIDE A TABLE CALLED HUMANS.
+
 from SPARQLWrapper import SPARQLWrapper, JSON
 import json
 import pandas as pd
 import sqlite3
 
 endpoint_url = "https://query.wikidata.org/sparql"
-sparql = SPARQLWrapper(endpoint_url, agent="Akigator/1.0 (thearyanpathak@gmail.com) An open source educational project to recreate how Akinator (classic character guessing game) works. Uses Wikidata's database on humans instead of proprietary closed-source character information like akinator. Not spam, this is a one time thing but will take some time, so will require a longer timeout")
+sparql = SPARQLWrapper(endpoint_url, agent="Akigator/1.0 (thearyanpathak@gmail.com) An open source educational project to recreate how Akinator (classic character guessing game) works. Uses Wikidata's database on humans instead of proprietary closed-source character information like akinator.")
 
 query = """
-SELECT DISTINCT ?personLabel ?personDescription ?sex ?occupationLabel ?citizenship ?sitelinks (MAX(?rawCount) AS ?followers)
+SELECT DISTINCT ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks (MAX(?rawCount) AS ?followers)
 WHERE {
 ?person   wdt:P31 wd:Q5 ;
           wdt:P8687 ?rawCount ;
@@ -19,17 +21,16 @@ WHERE {
           wdt:P106 ?occupation ;
           wdt:P21 ?sex ;
           wikibase:sitelinks ?sitelinks .
-  
- # OPTIONAL { ?person wdt:P101 ?fieldExists . }
- # BIND(COALESCE (?fieldExists, 'NIL') as ?field)
-          
+
+ OPTIONAL { ?person wdt:P101 ?fieldExists . }
+ BIND(COALESCE (?fieldExists, 'NIL') as ?field)
+
   FILTER(?sitelinks > 25)
-  FILTER(?rawCount > 100000)
-            
+  FILTER(?rawCount > 1500000)
+
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
-GROUP BY ?personLabel ?personDescription ?sex ?field ?occupationLabel ?citizenship ?sitelinks
-LIMIT 10
+GROUP BY ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks
 """
 sparql.setQuery(query)
 sparql.setReturnFormat(JSON)
