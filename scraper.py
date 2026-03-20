@@ -30,7 +30,7 @@ WHERE {
 
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
-GROUP BY ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks
+GROUP BY ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks ?fieldLabel
 """
 sparql.setQuery(query)
 sparql.setReturnFormat(JSON)
@@ -50,4 +50,4 @@ with (open('humans.json', 'w') as humans):
 df=pd.read_json("humans.json")
 
 con = sqlite3.connect("humans.db")
-df.to_sql("humans", con, if_exists='replace', index=False)
+df.to_sql("humansRaw", con, if_exists='replace', index=False)
