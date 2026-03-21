@@ -15,20 +15,22 @@ sparql = SPARQLWrapper(endpoint_url, agent="Akigator/1.0 (thearyanpathak@gmail.c
 query = """
 SELECT DISTINCT ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks ?fieldLabel (MAX(?rawCount) AS ?followers)
 WHERE {
-?person   wdt:P31 wd:Q5 ;
-          wdt:P8687 ?rawCount ;
-          wdt:P27 ?citizenship ;
-          wdt:P106 ?occupation ;
-          wdt:P21 ?sex ;
-          wikibase:sitelinks ?sitelinks .
-
- OPTIONAL { ?person wdt:P101 ?fieldExists . }
- BIND(COALESCE (?fieldExists, 'NIL') as ?field)
-
-  FILTER(?sitelinks > 25)
-  FILTER(?rawCount > 1500000)
-
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+    ?person   wdt:P31 wd:Q5 ;
+              wdt:P8687 ?rawCount ;
+              wdt:P27 ?citizenship ;
+              wdt:P21 ?sex ;
+              wikibase:sitelinks ?sitelinks .
+    
+    OPTIONAL { ?person wdt:P106 ?occupationExists ; . }
+    BIND(COALESCE (?fieldExists, 'NIL') as ?occupation)
+    
+    FILTER(
+    (?followers > 1000000 && ?sitelinks > 15) ||
+    (?followers > 2000000) ||
+    (?sitelinks > 34)
+        )
+        
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
 GROUP BY ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks ?fieldLabel
 """
