@@ -29,8 +29,8 @@ WHERE {
     FILTER(
     (?followers > 1000000 && ?sitelinks > 15) ||
     (?followers > 2000000) ||
-    (?sitelinks > 34)
-        )
+    (?followers > 100000 && ?sitelinks > 34)
+    )
         
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }

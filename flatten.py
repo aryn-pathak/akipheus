@@ -8,12 +8,11 @@ import pandas as pd
 
 con = sqlite3.connect("humans.db")
 df = pd.read_sql("SELECT * FROM humansRaw", con)
-df = df.drop_duplicates(subset=['occupationLabel', 'citizenshipLabel', 'sexLabel', 'sitelinks', 'followers', 'fieldLabel'])
+df = df.drop_duplicates(subset=['occupationLabel', 'citizenshipLabel', 'sexLabel', 'sitelinks', 'followers'])
 
 grouped = df.groupby('personLabel').agg({
     'personDescription': 'first',
     'sexLabel': 'first',
-    'fieldLabel': ','.join,
     'occupationLabel': ','.join,
     'citizenshipLabel': ','.join,
     'sitelinks': 'first',
