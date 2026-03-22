@@ -24,7 +24,7 @@ WHERE {
     BIND(COALESCE(?followersExist, 0) AS ?rawCount  .)      # some people don't have a mentioned "followers" property. To avoid breaking the FILTER set NIL to zero
     
     OPTIONAL { ?person wdt:P106 ?occupationExists ; . }
-    BIND(COALESCE (?fieldExists, 'NIL') as ?occupation)
+    BIND(COALESCE (?occupationExists, 'NIL') as ?occupation)
     
     FILTER(
     (?followers > 1000000 && ?sitelinks > 15) ||
