@@ -148,6 +148,24 @@ def AIclean(descriptionList, occupationList, nameList):
 
 humansClean = []
 
+descriptionList = []
+occupationList = []
+nameList = []
+
+for item in records:
+    descriptionList.append(item['personDescription'])
+    occupationList.append(item['occupationLabel'])
+    nameList.append(item['personLabel'])
+
+    if len(descriptionList) == 30:
+        AIclean(descriptionList, occupationList, nameList)
+        descriptionList = []
+        occupationList = []
+        nameList = []
+
+if descriptionList:
+    AIclean(descriptionList, occupationList, nameList)
+
 for item in records:
     description = item["personDescription"]
     occupation = item["occupationLabel"]
