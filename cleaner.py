@@ -139,13 +139,21 @@ for item in records:
     occupation = item["occupationLabel"]
     name = item["personLabel"]
 
-    result = AIclean(description, occupation, name)
+    result = json.loads(AIclean(description, occupation, name))
     print(result)
 
-    # item["occupationLabel"] = result['occupation']
-    # item["field"] = result['field']
-    #
-    # print(item)
-    # time.sleep(2.5)
+    item["occupationLabel"] = result['occupation']
+    item["field"] = result['field']
+
+    print(item)
+    time.sleep(2.5)
 
     humansClean.append(item)
+
+with (open('humansClean.json', 'w') as humans):
+    json.dump(humansClean, humans, indent=4)
+
+df=pd.read_json("humansClean.json")
+
+con = sqlite3.connect("humans.db")
+df.to_sql("humansClean", con, if_exists='replace', index=False)
