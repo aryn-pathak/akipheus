@@ -1,7 +1,7 @@
 import json
 import sqlite3
-import mlx_lm
 import outlines
+import mlx_lm
 import pandas as pd
 from mlx_lm import load, generate
 from mlx_lm.sample_utils import make_sampler
@@ -144,6 +144,7 @@ def AIclean(descriptionList, occupationList, nameList):
         promptBatch.append(generatePrompt(description, occupation, name))
 
     result = model.batch(promptBatch)
+    print(result)
     return result
 
 humansClean = []
@@ -158,26 +159,23 @@ for item in records:
     nameList.append(item['personLabel'])
 
     if len(descriptionList) == 30:
-        AIclean(descriptionList, occupationList, nameList)
+        result = AIclean(descriptionList, occupationList, nameList)
+        for x in range(len(result)):
+            item["occupationLabel"] = json.loads(result[x])["occupation"]
+            item["field"] = json.load(result[x])["field"]
+
         descriptionList = []
         occupationList = []
         nameList = []
+        humansClean.append(item)
 
 if descriptionList:
-    AIclean(descriptionList, occupationList, nameList)
+    result = AIclean(descriptionList, occupationList, nameList)
+    for x in range(len(result)):
+        item["occupationLabel"] = json.loads(result[x])["occupation"]
+        item["field"] = json.loads(result[x])["field"]
+        humansClean.append(item)
 
-for item in records:
-    description = item["personDescription"]
-    occupation = item["occupationLabel"]
-    name = item["personLabel"]
-
-    result = json.loads(AIclean(description, occupation, name))
-    print(result)
-
-    item["occupationLabel"] = result['occupation']
-    item["field"] = result['field']
-
-    humansClean.append(item)
 
 with (open('humansClean.json', 'w') as humans):
     json.dump(humansClean, humans, indent=4)
