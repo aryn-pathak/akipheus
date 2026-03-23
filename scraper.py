@@ -18,20 +18,18 @@ WHERE {
     ?person   wdt:P31 wd:Q5 ;
               wdt:P27 ?citizenship ;
               wdt:P21 ?sex ;
-              wikibase:sitelinks ?sitelinks .
-              
+              wikibase:sitelinks ?sitelinks ;
+              wdt:P106 ?occupation .
+
     OPTIONAL {?person wdt:P8687 ?followersExist .}
-    BIND(COALESCE(?followersExist, 0) AS ?rawCount  .)      # some people don't have a mentioned "followers" property. To avoid breaking the FILTER set NIL to zero
-    
-    OPTIONAL { ?person wdt:P106 ?occupationExists ; . }
-    BIND(COALESCE (?occupationExists, 'NIL') as ?occupation)
-    
+    BIND(COALESCE(?followersExist, 0) AS ?rawCount)      # some people don't have a mentioned "followers" property. To avoid breaking the FILTER set NIL to zero
+
     FILTER(
     (?followers > 1000000 && ?sitelinks > 15) ||
     (?followers > 2000000) ||
-    (?followers > 100000 && ?sitelinks > 34)
+    (?sitelinks > 34 && ?followers = 0)
     )
-        
+
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
 GROUP BY ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks

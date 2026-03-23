@@ -141,11 +141,11 @@ for item in records:
 
     result = AIclean(description, occupation, name)
     print(result)
-    #
+
     # item["occupationLabel"] = result['occupation']
     # item["field"] = result['field']
     #
     # print(item)
-    time.sleep(2.5)
+    # time.sleep(2.5)
 
     humansClean.append(item)
