@@ -11,14 +11,19 @@ async function init(){
     console.log("welcome to Akigator!");
 }
 
-// dict is a list expected to be in format [{"sex" : "male"}, {"citizenship" : "NOT india, NOT united states, NOT canada, france, italy"}, {"occupation" : "NOT politician, NOT scientist, actor"}]
+// obj is an object expected to be in format { citizenshipLabel : ["india", "NOT united states"], occupationLabel : ["actor", "NOT scientist"] ...}
 // anything with NOT is something answered "no" to.
 
-// export function getAll(dict){
-//     const sex = dict.sex
-//     const
-//
-//     return results;
-// }
-
-init().then(()=>{console.log(getAll("nigger"))})
+let query
+export function getAll(obj) {
+    query = "SELECT * FROM humansFlat WHERE sitelinks > 1"
+    for (let key in obj) {
+        for (let filter in obj[key]) {
+            if (filter.startsWith("NOT "))
+                query += `AND ${key} NOT LIKE '%,${filter},%'`;
+            else query += `AND ${key} LIKE '%,${filter},%'`;
+        }
+    }
+    result = db.exec(query)
+    return result
+}
