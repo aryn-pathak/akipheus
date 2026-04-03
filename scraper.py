@@ -13,7 +13,7 @@ endpoint_url = "https://query.wikidata.org/sparql"
 sparql = SPARQLWrapper(endpoint_url, agent="Akigator/1.0 (thearyanpathak@gmail.com) An open source educational project to recreate how Akinator (classic character guessing game) works. Uses Wikidata's database on humans instead of proprietary closed-source character information like akinator.")
 
 query = """
-SELECT DISTINCT ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks (MAX(?rawCount) AS ?followers)
+SELECT DISTINCT ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks ?alive ?special ?employerLabel ?politicalPartyLabel (MAX(?rawCount) AS ?followers)
 WHERE {
     ?person   wdt:P31 wd:Q5 ;
               wdt:P27 ?citizenship ;
@@ -23,16 +23,29 @@ WHERE {
 
     OPTIONAL {?person wdt:P8687 ?followersExist .}
     BIND(COALESCE(?followersExist, 0) AS ?rawCount)      # some people don't have a mentioned "followers" property. To avoid breaking the FILTER set NIL to zero
-
-    FILTER(
-    (?followers > 1000000 && ?sitelinks > 15) ||
-    (?followers > 2000000) ||
-    (?sitelinks > 34 && ?followers = 0)
-    )
-
+    
+    OPTIONAL {?person wdt:P970 ?dateDeath .}
+    BIND(IF(bound(?deathDate), "NO", "YES"))
+    
+    OPTIONAL {?person p:P108 ?emp
+    ?emp prov:wasDerivedFrom ?ref ;
+        ps:P108 ?employerName .}
+    BIND(COALESCE(?employerName, "NIL") AS ?employer)
+    
+    OPTIONAL {?person p:P102 ?pp
+    ?pp prov:wasDerivedFrom ?ref ;
+        ps:P102 ?ppName .}
+    BIND(COALESCE(?ppName, "NIL") AS ?politicalParty)
+    
+    
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
 GROUP BY ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks
+HAVING (
+    (MAX(?rawCount) > 1000000 && ?sitelinks > 15) ||
+    (MAX(?rawCount) > 2000000) ||
+    (?sitelinks > 34 && MAX(?rawCount) = 0)
+)
 """
 sparql.setQuery(query)
 sparql.setReturnFormat(JSON)
