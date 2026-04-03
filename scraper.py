@@ -37,7 +37,11 @@ WHERE {
         ps:P102 ?ppName .}
     BIND(COALESCE(?ppName, "NIL") AS ?politicalParty)
     
-    
+    BIND(
+    IF(bound(?politicalParty), "politicalParty", 
+        IF(bound(?employer), "employer", "N/A"))
+        AS ?special)
+        
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
 GROUP BY ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks
