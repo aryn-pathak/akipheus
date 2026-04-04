@@ -3,15 +3,15 @@ import sqlite3
 import outlines
 import mlx_lm
 import pandas as pd
-from mlx_lm import load, generate
+from mlx_lm import load
 from mlx_lm.sample_utils import make_sampler
 
 con = sqlite3.connect("humans.db")
 df = pd.read_sql("SELECT * FROM humansFlat", con)
 records = df.to_dict(orient='records')
 
-tokenizer = load("mlx-community/Phi-4-mini-instruct-8bit")
-model = outlines.from_mlxlm(*mlx_lm.load("mlx-community/Phi-4-mini-instruct-8bit"))
+model_raw, tokenizer = mlx_lm.load("mlx-community/Phi-4-mini-instruct-8bit")
+model = outlines.from_mlxlm(model_raw, tokenizer)
 
 sampler = make_sampler(temp=0.2)
 
@@ -133,7 +133,6 @@ def generatePrompt(description, occupation, name):
     ]
 
     return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-
 def AIclean(descriptionList, occupationList, nameList):
     promptBatch = []
 
@@ -148,26 +147,28 @@ def AIclean(descriptionList, occupationList, nameList):
     return result
 
 humansClean = []
-
 descriptionList = []
 occupationList = []
 nameList = []
+batch = []
 
 for item in records:
     descriptionList.append(item['personDescription'])
     occupationList.append(item['occupationLabel'])
     nameList.append(item['personLabel'])
+    batch.append(item)
 
-    if len(descriptionList) == 30:
+    if len(batch) == 30:
         result = AIclean(descriptionList, occupationList, nameList)
         for x in range(len(result)):
-            item["occupationLabel"] = json.loads(result[x])["occupation"]
-            item["field"] = json.load(result[x])["field"]
+            batch[x]["occupationLabel"] = json.loads(result[x])["occupation"]
+            batch[x]["field"] = json.loads(result[x])["field"]
 
         descriptionList = []
         occupationList = []
         nameList = []
-        humansClean.append(item)
+        humansClean.append(batch[x])
+        print(batch[x])
 
 if descriptionList:
     result = AIclean(descriptionList, occupationList, nameList)
