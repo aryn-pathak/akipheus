@@ -1,5 +1,4 @@
 # this is a scraper to get entries from wikidata.
-# akigator will only use "humans" (non-fictional humans) with >25 sitelinks (somewhat popular, not including ultra-niche people), and having a defined gender, citizenship, occupation (to filter out ghosts), and has a follower count listed
 # using a scraper means we'll get a list of entities much, much smaller than wikidata's list, and doesn't query wikidata to sort through 120M+ entities for every small question, which is abusive to them.
 
 # NOTE: THIS CODE IS ONLY FOR REFERENCE AND DOES NOT REQUIRE RUNNING AGAIN. IT HAS BEEN RUN AND RESULT STORED IN A DATABASE CALLED HUMANS INSIDE A TABLE CALLED HUMANS.
@@ -29,17 +28,15 @@ WHERE {
     
     OPTIONAL {?person p:P108 ?emp
     ?emp prov:wasDerivedFrom ?ref ;
-        ps:P108 ?employerName .}
-    BIND(COALESCE(?employerName, "NIL") AS ?employer)
+        ps:P108 ?employer .}
     
     OPTIONAL {?person p:P102 ?pp
     ?pp prov:wasDerivedFrom ?ref ;
-        ps:P102 ?ppName .}
-    BIND(COALESCE(?ppName, "NIL") AS ?politicalParty)
+        ps:P102 ?pp .}
     
     BIND(
-    IF(bound(?politicalParty), "politicalParty", 
-        IF(bound(?employer), "employer", "N/A"))
+    IF(bound(?politicalParty), "politician", 
+        IF(bound(?employer), "employed", "no"))
         AS ?special)
         
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
