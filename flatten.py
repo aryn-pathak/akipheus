@@ -4,7 +4,11 @@
 # this code "flattens" the table, in the sense that there's one row per person, but multiple occupations are simply separated by commas.
 
 import sqlite3
+import numpy as np
 import pandas as pd
+
+slWeightFollowers = 1
+slWeightNoFollowers = 2
 
 con = sqlite3.connect("humans.db")
 df = pd.read_sql("SELECT * FROM humansRaw", con)
@@ -18,6 +22,13 @@ grouped = df.groupby('personLabel').agg({
     'sitelinks': 'first',
     'followers': 'first'
 }).reset_index()
+
+grouped['P'] = np.where(
+    grouped['followers'] > 0,
+    grouped['followers'] + grouped['sitelinks']*slWeightFollowers,
+    grouped['sitelinks']*slWeightNoFollowers
+)
+
 grouped.to_sql("humansFlat", con, if_exists='replace', index=False)
 
 con.close()
