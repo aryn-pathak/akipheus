@@ -11,7 +11,7 @@ async function init(){
     console.log("initialised");
 }
 
-// obj is an object expected to be in format { citizenshipLabel : ["india", "NOT united states"], occupationLabel : ["actor", "NOT scientist"] ...}
+// obj is an object expected to be in format { citizenshipLabel : ["India", "NOT United States"], occupationLabel : ["actor", "NOT scientist"] ...}
 // anything with NOT is something answered "no" to.
 
 export function getAll(obj) {
@@ -19,8 +19,8 @@ export function getAll(obj) {
     for (let key in obj) {
         for (let filter of obj[key]) {
             if (filter.startsWith("NOT "))
-                query += ` AND ${key} NOT LIKE '%,${filter},%'`;
-            else query += ` AND ${key} LIKE '%,${filter},%'`;
+                query += ` AND ${key} NOT LIKE '%"${filter.slice(4)}"%'`;
+            else query += ` AND ${key} LIKE '%"${filter}"%'`;
         }
     }
     return db.exec(query)

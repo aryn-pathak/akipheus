@@ -1,5 +1,5 @@
 # refer to scraper.py for scraping logic and getting humans.db
-
+import json
 # the table humansRaw inside humans.db has ~10k rows, since each occupation/citizenship/field of work for a particular person creates a new row.
 # this code "flattens" the table, in the sense that there's one row per person, but multiple occupations are simply separated by commas.
 
@@ -14,8 +14,8 @@ df = df.drop_duplicates(subset=['occupationLabel', 'citizenshipLabel', 'sexLabel
 grouped = df.groupby('personLabel').agg({
     'personDescription': 'first',
     'sexLabel': 'first',
-    'occupationLabel': ','.join,
-    'citizenshipLabel': ','.join,
+    'occupationLabel': lambda x: json.dumps(list(x)),
+    'citizenshipLabel': lambda x: json.dumps(list(x)),
     'sitelinks': 'first',
     'followers': 'first'
 }).reset_index()
@@ -26,8 +26,7 @@ conditions = [
     (grouped['followers'] <= 5_000_000),
     (grouped['followers'] <= 25_000_000),
     (grouped['followers'] <= 100_000_000),
-    (grouped['followers'] <= 300_000_000)
-    (grouped['followers'] > 300_000_000)
+    (grouped['followers'] <= 300_000_000),
 ]
 choices = [
     150_000 + (grouped['sitelinks'] * 50_000),

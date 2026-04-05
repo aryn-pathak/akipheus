@@ -12,7 +12,7 @@ endpoint_url = "https://query.wikidata.org/sparql"
 sparql = SPARQLWrapper(endpoint_url, agent="Akigator/1.0 (thearyanpathak@gmail.com) An open source educational project to recreate how Akinator (classic character guessing game) works. Uses Wikidata's database on humans instead of proprietary closed-source character information like akinator.")
 
 query = """
-SELECT DISTINCT ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks ?alive ?special ?employerLabel ?politicalPartyLabel (MAX(?rawCount) AS ?followers)
+SELECT DISTINCT ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks ?alive ?special (?employerLabel AS employer) (?politicalPartyLabel AS political party) (MAX(?rawCount) AS ?followers)
 WHERE {
     ?person   wdt:P31 wd:Q5 ;
               wdt:P27 ?citizenship ;
@@ -24,7 +24,7 @@ WHERE {
     BIND(COALESCE(?followersExist, 0) AS ?rawCount)      # some people don't have a mentioned "followers" property. To avoid breaking the FILTER set NIL to zero
     
     OPTIONAL {?person wdt:P970 ?dateDeath .}
-    BIND(IF(bound(?deathDate), "NO", "YES"))
+    BIND(IF(bound(?deathDate), "no", "yes") AS ?alive)
     
     OPTIONAL {?person p:P108 ?emp
     ?emp prov:wasDerivedFrom ?ref ;
@@ -41,7 +41,7 @@ WHERE {
         
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
-GROUP BY ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks
+GROUP BY ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks ?alive ?special ?employerLabel ?politicalPartyLabel
 HAVING (
     (MAX(?rawCount) > 1000000 && ?sitelinks > 15) ||
     (MAX(?rawCount) > 2000000) ||
