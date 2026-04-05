@@ -24,9 +24,13 @@ export function getAll(obj) {
         }
     }
     let result = db.exec(query);
-    for (const item of result) {
-        item.occupationLabel = JSON.parse(item.occupationLabel);
-        item.citizenshipLabel = JSON.parse(item.citizenshipLabel);
+    console.log(result);
+
+    let rows = result[0].values
+
+    for (const item of rows) {
+        item[3] = item[3] ? JSON.parse(item[3]) : [];
+        item[4] = item[4] ? JSON.parse(item[4]) : [];
     }
     return result;
 }
