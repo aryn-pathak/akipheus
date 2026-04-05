@@ -23,5 +23,10 @@ export function getAll(obj) {
             else query += ` AND ${key} LIKE '%"${filter}"%'`;
         }
     }
-    return db.exec(query)
+    let result = db.exec(query);
+    for (const item of result) {
+        item.occupationLabel = JSON.parse(item.occupationLabel);
+        item.citizenshipLabel = JSON.parse(item.citizenshipLabel);
+    }
+    return result;
 }
