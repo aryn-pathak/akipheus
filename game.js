@@ -19,15 +19,29 @@ function bayesian(M, C, S, R){          // M: avg P of all, C: weight, S: sum of
 function getPopular(property, obj){         // property is the key name. obj is obj. func is getAll()
     let people = getAll(obj)[0].values
     let index
-    let countriesRaw = []
-    let countriesUnique = []
+    let raw = []
+    let Unique = []
+    let PList = []
 
-    index = (property == "citizenshipLabel") ? 4 : 3;
+    index = (property === "citizenshipLabel") ? 4 : 3;
+
     people.forEach((item) => {
-        countriesRaw.push(...item[index])
+        const object = {"name":item[index], "P":item[7]}
+        raw.push(...object)
     })
-    countriesUnique = [...new Set(countriesRaw)];
+
+    let unique = []
+    raw.forEach((item) => {
+        if (item.name in unique){}else{
+            unique.push(item.name)
+        }
+    })
+    for (const item in unique){
+       let filtered = raw.filter(object => object.name === item)
+        // use .reduce() to sum up P, get count of each occupation/country
+    }
 }
-init().then(() => {
-    console.log(getPopular("citizenshipLabel"), obj);
-});
+
+// citizenshipLabel is [4], occupationLabel is [3]. getAll() returns columns and values separately, values is an array, not key-value pairs
+
+//  return people.filter((item) => item.citizenshipLabel.includes(country));
