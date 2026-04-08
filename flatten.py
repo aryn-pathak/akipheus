@@ -16,8 +16,12 @@ grouped = df.groupby('personLabel').agg({
     'sexLabel': 'first',
     'occupationLabel': lambda x: json.dumps(list(set(x))),
     'citizenshipLabel': lambda x: json.dumps(list(set(x))),
+    'followers':'first',
     'sitelinks': 'first',
-    'followers': 'first'
+    'alive': 'first',
+    'special':'first',
+    'political party': lambda x: json.dumps(list(set(x))),
+     'P': 'first'
 }).reset_index()
 
 conditions = [

@@ -1,7 +1,7 @@
 import {getAll} from "./db.js";
 import {init} from "./db.js";
 
-let obj = {"citizenshipLabel":[], "sexLabel":[], "occupationLabel":[], "field":[], "special":[], "pp":[], "employer":[], "alive":[]};
+let obj = {"citizenshipLabel":[], "sexLabel":[], "occupationLabel":[], "field":[], "special":[], "political party":[], "employer":[], "alive":[]};
 let statements = {          // statements for framing questions about particular characteristics
     "sexLabel":"is your character a ",
     "citizenshipLabel":"is your character from",
@@ -22,10 +22,10 @@ function getPopular(property, obj){         // property is the key name (citizen
     let index
     let raw = []
 
-    index = (property === "citizenshipLabel") ? 4 : 3;
+    index = (property === "citizenshipLabel") ? 4 : 3; // need to change to allow support for all properties
 
     people.forEach((item) => {
-        const object = {"name":item[index], "P":item[7]}
+        const object = {"name":item[index], "P":item[7]}    // this too
         raw.push(object)
     })
 
@@ -42,6 +42,14 @@ function getPopular(property, obj){         // property is the key name (citizen
        let totalP = filtered.reduce((acc, no)=>acc + no);
        aggregate.push({"name":item, "S":totalP, "R":(totalP/filtered.length)});
     }
-}
+    aggregate.sort((a, b)=>b.S-a.S)
 
-//  return people.filter((item) => item[4].includes(country));
+    let result = ""
+    for (let i=0; i<aggregate.length; i++){
+        if(obj[property].includes(aggregate[i].name)){
+            continue;
+        }else{result = aggregate[i];
+        break;}
+    }
+    return result;
+}
