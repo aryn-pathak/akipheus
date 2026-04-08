@@ -37,12 +37,14 @@ function getPopular(property, obj){         // property is the key name (citizen
     })
 
     let aggregate = []
+
+    const M = raw.reduce((acc, o)=>acc + o.P, 0);/unique.length;
     for (const item in unique){
        let filtered = raw.filter(o => o.name === item).map(o => o.P);
        let totalP = filtered.reduce((acc, no)=>acc + no);
-       aggregate.push({"name":item, "S":totalP, "R":(totalP/filtered.length)});
+       aggregate.push({"name":item, "S":totalP, "B":bayesian(M, C, totalP, (totalP/filtered.length))});
     }
-    aggregate.sort((a, b)=>b.S-a.S)
+    aggregate.sort((a, b)=>b.B-a.B)
 
     let result = ""
     for (let i=0; i<aggregate.length; i++){
