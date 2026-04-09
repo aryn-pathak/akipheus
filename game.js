@@ -8,9 +8,10 @@ let statements = {          // statements for framing questions about particular
     "occupationLabel":"is your character a ",
     "field":"is your character related to ",
     "special":"is your character ", // a politician - politician OR employed by a corporation - employed
-    "pp":"is your character in ",
+    "political party":"is your character in ",
     "employer":"is your character employed by ",
 }
+let order = ["alive", "sexLabel", "citizenshipLabel", "special", "field"];
 
 function bayesian(M, C, S, R){          // M: avg P of all, C: weight, S: sum of P for particular, R: avg P of particular
     return ((C*M)+(S*R))/(C+S)
@@ -36,9 +37,9 @@ function getPopular(property, obj){         // property is the key name (citizen
         }
     })
 
-    let aggregate = []
+    const M = raw.reduce((acc, o)=>acc + o.P, 0);/unique.length
 
-    const M = raw.reduce((acc, o)=>acc + o.P, 0);/unique.length;
+    let aggregate = []
     for (const item in unique){
        let filtered = raw.filter(o => o.name === item).map(o => o.P);
        let totalP = filtered.reduce((acc, no)=>acc + no);
@@ -48,9 +49,9 @@ function getPopular(property, obj){         // property is the key name (citizen
 
     let result = ""
     for (let i=0; i<aggregate.length; i++){
-        if(obj[property].includes(aggregate[i].name)){
-            continue;
-        }else{result = aggregate[i];
+        if(obj[property].includes(aggregate[i].name) ||
+            obj[property].includes("NOT " + aggregate[i].name)){}
+        else{result = aggregate[i];
         break;}
     }
     return result;
