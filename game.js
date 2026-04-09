@@ -10,6 +10,7 @@ let statements = {          // statements for framing questions about particular
     "special":"is your character ", // a politician - politician OR employed by a corporation - employed
     "political party":"is your character in ",
     "employer":"is your character employed by ",
+    "alive":"is your character ", // deceased/alive
 }
 let order = ["alive", "sexLabel", "citizenshipLabel", "special", "field"];
 

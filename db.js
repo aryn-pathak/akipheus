@@ -1,4 +1,4 @@
-let db;
+let db
 export async function init(){
     console.log("initializing");
     const SQL = await initSqlJs({
