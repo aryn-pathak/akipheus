@@ -1,7 +1,9 @@
-import {getAll} from "./db.js";
-import {init} from "./db.js";
+import {getAll, getPopular} from "./db";
 
-let obj = {"citizenshipLabel":[], "sexLabel":[], "occupationLabel":[], "field":[], "special":[], "political party":[], "employer":[], "alive":[]};
+yesButton = document.getElementById("yes")
+noButton = document.getElementById("no")
+question = document.getElementById("question")
+
 let statements = {          // statements for framing questions about particular characteristics
     "sexLabel":"is your character a ",
     "citizenshipLabel":"is your character from",
@@ -12,48 +14,23 @@ let statements = {          // statements for framing questions about particular
     "employer":"is your character employed by ",
     "alive":"is your character ", // deceased/alive
 }
-let order = ["alive", "sexLabel", "citizenshipLabel", "special", "field"];
+let order = ["alive", "sexLabel", "citizenshipLabel", "special", "field", "occupationLabel"];
 
-function bayesian(M, C, S, R){          // M: avg P of all, C: weight, S: sum of P for particular, R: avg P of particular
-    return ((C*M)+(S*R))/(C+S)
-}
+function getQuestion(obj){
+    let affectProperty;
+    let highAffect
 
-// citizenshipLabel is [4], occupationLabel is [3]. getAll() returns columns and values separately, values is an array, not key-value pairs
-function getPopular(property, obj){         // property is the key name (citizenshipLabel or occupationLabel), obj is obj.
-    let people = getAll(obj)[0].values
-    let index
-    let raw = []
+    for(const property in order){
+        let people = { ...obj, [property]: obj[property].concat(getPopular(property, obj)) }
+        let yes = getAll(people)[0].values.count
+        people = { ...obj, [property]: obj[property].concat("NOT " + getPopular(property, obj)) }
+        let no = getAll(people)[0].values.count
+        let affect = getAll(obj)-((yes + no)/2)
 
-    index = (property === "citizenshipLabel") ? 4 : 3; // need to change to allow support for all properties
-
-    people.forEach((item) => {
-        const object = {"name":item[index], "P":item[7]}    // this too
-        raw.push(object)
-    })
-
-    let unique = []
-    raw.forEach((item) => {
-        if (unique.includes(item.name)){}else{
-            unique.push(item.name)
-        }
-    })
-
-    const M = raw.reduce((acc, o)=>acc + o.P, 0);/unique.length
-
-    let aggregate = []
-    for (const item in unique){
-       let filtered = raw.filter(o => o.name === item).map(o => o.P);
-       let totalP = filtered.reduce((acc, no)=>acc + no);
-       aggregate.push({"name":item, "S":totalP, "B":bayesian(M, C, totalP, (totalP/filtered.length))});
+        if(affect > highAffect){
+            highAffect = affect
+            affectProperty = property
+        }else{}
     }
-    aggregate.sort((a, b)=>b.B-a.B)
-
-    let result = ""
-    for (let i=0; i<aggregate.length; i++){
-        if(obj[property].includes(aggregate[i].name) ||
-            obj[property].includes("NOT " + aggregate[i].name)){}
-        else{result = aggregate[i];
-        break;}
-    }
-    return result;
+    return affectProperty
 }

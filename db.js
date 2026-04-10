@@ -1,4 +1,6 @@
 let db
+let obj = {"citizenshipLabel":[], "sexLabel":[], "occupationLabel":[], "field":[], "special":[], "political party":[], "employer":[], "alive":[]};
+
 export async function init(){
     console.log("initializing");
     const SQL = await initSqlJs({
@@ -31,6 +33,49 @@ export function getAll(obj) {
     for (const item of rows) {
         item[3] = item[3] ? JSON.parse(item[3]) : [];
         item[4] = item[4] ? JSON.parse(item[4]) : [];
+    }
+    return result;
+}
+function bayesian(M, C, S, R){          // M: avg P of all, C: weight, S: sum of P for particular, R: avg P of particular
+    return ((C*M)+(S*R))/(C+S)
+} // is this right??
+// citizenshipLabel is [4], occupationLabel is [3]. getAll() returns columns and values separately, values is an array, not key-value pairs
+export function getPopular(property, obj){         // property is the key name (citizenshipLabel or occupationLabel), obj is obj.
+    let people = getAll(obj)[0].values
+    let index
+    let raw = []
+
+    index = (property === "citizenshipLabel") ? 4 : 3; // need to change to allow support for all properties
+
+    people.forEach((item) => {
+        const object = {"name":item[index], "P":item[7]}    // this too
+        // FUCK item[index] is an array itself
+        raw.push(object)
+    })
+
+    let unique = []
+    raw.forEach((item) => {
+        if (unique.includes(item.name)){}else{
+            unique.push(item.name)
+        }
+    })
+
+    const M = raw.reduce((acc, o)=>acc + o.P, 0);/unique.length
+
+    let aggregate = []
+    for (const item in unique){
+        let filtered = raw.filter(o => o.name === item).map(o => o.P);
+        let totalP = filtered.reduce((acc, no)=>acc + no);
+        aggregate.push({"name":item, "S":totalP, "B":bayesian(M, C, totalP, (totalP/filtered.length))});
+    }
+    aggregate.sort((a, b)=>b.B-a.B)
+
+    let result = ""
+    for (let i=0; i<aggregate.length; i++){
+        if(obj[property].includes(aggregate[i].name) ||
+            obj[property].includes("NOT " + aggregate[i].name)){}
+        else{result = aggregate[i];
+            break;}
     }
     return result;
 }
