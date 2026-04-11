@@ -35,10 +35,10 @@ function getQuestion(){
     if(highEffect <= 6){
         return effectProperty
     }else if(getAll(obj)[0].values.count === 1){
-        question.innerHTML("you're thinking of" + getAll(obj)[0].values[0][0] + "!")
+        question.innerHTML = "you're thinking of" + getAll(obj)[0].values[0][0] + "!"
         return "gameComplete"
     }
-    else if(getAll(obj)[0].values.count === 0){question.innerHTML("sorry, I couldn't guess your character :(")}
+    else if(getAll(obj)[0].values.count === 0){question.innerHTML = "sorry, I couldn't guess your character :("}
     else if(highEffect <= 7){
         let descList = []
         for (const person in getAll(obj)[0].values){
@@ -55,22 +55,21 @@ function getQuestion(){
     }
 }
 function special(){
-    if (obj.special.length <= 0){
-        question.innerHTML = "is your character a politician?"
-        yesButton.addEventListener("click", () => {
-            obj.special.push("politician");
-        }, {once: true});
-        noButton.addEventListener("click", () => {
+    if(obj.special.length <= 0){
+        question.innerHTML = "is your character associated with a political party?"
+
+        function politician(){obj.special.push("politician")}
+        function employed(){obj.special.push("employed")}
+        function no(){obj.special.push("no")}
+        function noPress(){
             question.innerHTML = "is your character employed by a corporation?"
-            yesButton.removeEventListener("click", () => {})
-            yesButton.addEventListener("click", () => {
-                obj.special.push("employed");
-            }, {once: true})
-            noButton.addEventListener("click", () => {
-                obj.special.push("no");
-            }, {once: true})
-        }, {once: true});
-    }else{}
+            yesButton.addEventListener("click", employed, {once: true});
+            noButton.addEventListener("click", no, {once: true});
+        }
+
+        yesButton.addEventListener("click", politician, {once: true});
+        noButton.addEventListener("click", noPress, {once: true});
+    }
 }
 function generateQuestion(){
     let ask = null;
