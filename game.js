@@ -1,4 +1,4 @@
-import {getAll, getPopular, getDesc} from "./db";
+import {getAll, getPopular, getDesc, obj} from "./db";
 
 const yesButton = document.getElementById("yes")
 const noButton = document.getElementById("no")
@@ -9,14 +9,13 @@ let statements = {          // statements for framing questions about particular
     "citizenshipLabel":"is your character from",
     "occupationLabel":"is your character a ",
     "field":"is your character related to ",
-    "special":"is your character ", // a politician - politician OR employed by a corporation - employed
     "political party":"is your character in ",
     "employer":"is your character employed by ",
-    "alive":"is your character ", // deceased/alive
+    "alive":"is your character ",
 }
-let order = ["alive", "sexLabel", "citizenshipLabel", "special", "field", "occupationLabel"];
+let order = ["alive", "sexLabel", "citizenshipLabel", "field", "occupationLabel"];
 
-function getQuestion(obj){
+function getQuestion(){
     let effectProperty;
     let highEffect = null;
 
@@ -32,6 +31,7 @@ function getQuestion(obj){
             effectProperty = property
         }else{}
     }
+
     if(highEffect <= 6){
         return effectProperty
     }else if(getAll(obj)[0].values.count === 1){
@@ -54,3 +54,28 @@ function getQuestion(obj){
         }
     }
 }
+function special(){
+    if (obj.special.length <= 0){
+        question.innerHTML = "is your character a politician?"
+        yesButton.addEventListener("click", () => {
+            obj.special.push("politician");
+        }, {once: true});
+        noButton.addEventListener("click", () => {
+            question.innerHTML = "is your character employed by a corporation?"
+            yesButton.removeEventListener("click", () => {})
+            yesButton.addEventListener("click", () => {
+                obj.special.push("employed");
+            }, {once: true})
+            noButton.addEventListener("click", () => {
+                obj.special.push("no");
+            }, {once: true})
+        }, {once: true});
+    }else{}
+}
+function generateQuestion(){
+    let ask = null;
+
+}
+
+// if (obj.special.includes("employer")) order.push("employer");
+// if (obj.special.includes("political party")) order.push("political party");
