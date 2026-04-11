@@ -1,5 +1,5 @@
 let db
-let obj = {"citizenshipLabel":[], "sexLabel":[], "occupationLabel":[], "field":[], "special":[], "political party":[], "employer":[], "alive":[]};
+export let obj = {"citizenshipLabel":[], "sexLabel":[], "occupationLabel":[], "field":[], "special":[], "political party":[], "employer":[], "alive":[]};
 import nlp from 'compromise'
 nlp.addWords({
     'prime minister':    'Title',
@@ -22,7 +22,6 @@ nlp.addWords({
     'association football player': 'Title',
 }) // list of common multi-word titles
 
-
 export async function init(){
     console.log("initializing");
     const SQL = await initSqlJs({
@@ -38,10 +37,10 @@ export async function init(){
 // obj is an object expected to be in format { citizenshipLabel : ["India", "NOT United States"], occupationLabel : ["actor", "NOT scientist"] ...}
 // anything with NOT is something answered "no" to.
 
-export function getAll(obj) {
+export function getAll(o) {
     let query = "SELECT * FROM humansFlat WHERE sitelinks > 1"
-    for (let key in obj) {
-        for (let filter of obj[key]) {
+    for (let key of o) {
+        for (let filter of o[key]) {
             if (filter.startsWith("NOT "))
                 query += ` AND ${key} NOT LIKE '%"${filter.slice(4)}"%'`;
             else query += ` AND ${key} LIKE '%"${filter}"%'`;
@@ -61,7 +60,7 @@ export function getAll(obj) {
 function bayesian(M, C, S, R){          // M: avg P of all, C: weight, S: sum of P for particular, R: avg P of particular
     return ((C*M)+(S*R))/(C+S)
 } // is this right??
-// citizenshipLabel is [4], occupationLabel is [3]. getAll() returns columns and values separately, values is an array, not key-value pairs
+// getAll() returns columns and values separately, values is an array, not key-value pairs
 export function getPopular(property, obj){         // property is the key name (citizenshipLabel or occupationLabel), obj is obj.
     let people = getAll(obj)[0].values
     let index
@@ -85,7 +84,7 @@ export function getPopular(property, obj){         // property is the key name (
     const M = raw.reduce((acc, o)=>acc + o.P, 0);/unique.length
 
     let aggregate = []
-    for (const item in unique){
+    for (const item of unique){
         let filtered = raw.filter(o => o.name === item).map(o => o.P);
         let totalP = filtered.reduce((acc, no)=>acc + no);
         aggregate.push({"name":item, "S":totalP, "B":bayesian(M, C, totalP, (totalP/filtered.length))});
@@ -102,8 +101,8 @@ export function getPopular(property, obj){         // property is the key name (
     return result;
 }
 export function getDesc(descList){
-    for (const person in descList){
-        let returnList = []
+    let returnList = []
+    for (const person of descList){
         let desc = descList.desc
 
         let organisation = desc.organisations().out('array')
@@ -111,8 +110,7 @@ export function getDesc(descList){
         returnList.push({'person':person.person, 'organisation':organisation,'nouns':nouns, 'P':person.P})
 
         returnList.sort((a, b) => b.P - a.P)
-        for(const item in returnList){delete item.P}
-
-        return returnList
+        for(const item of returnList){delete item.P}
     }
+    return returnList
 }

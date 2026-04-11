@@ -1,7 +1,8 @@
-import {getAll, getPopular, getDesc, obj} from "./db";
+import {getAll, getPopular, getDesc, init, obj} from "./db";
 
 const yesButton = document.getElementById("yes")
 const noButton = document.getElementById("no")
+const start = document.getElementById("start")
 const question = document.getElementById("question")
 
 let statements = {          // statements for framing questions about particular characteristics
@@ -13,13 +14,15 @@ let statements = {          // statements for framing questions about particular
     "employer":"is your character employed by ",
     "alive":"is your character ",
 }
-let order = ["alive", "sexLabel", "citizenshipLabel", "field", "occupationLabel"];
-
+let properties = ["alive", "sexLabel", "citizenshipLabel", "field", "occupationLabel"];
 function getQuestion(){
     let effectProperty;
     let highEffect = null;
 
-    for(const property in order){
+    if (obj.special.includes("employed")) properties.push("employed")
+    if (obj.special.includes("politician")) properties.push("politician")
+
+    for(const property of properties){
         let people = { ...obj, [property]: obj[property].concat(getPopular(property, obj)) }
         let yes = getAll(people)[0].values.count
         people = { ...obj, [property]: obj[property].concat("NOT " + getPopular(property, obj)) }
@@ -35,16 +38,15 @@ function getQuestion(){
     if(highEffect <= 6){
         return effectProperty
     }else if(getAll(obj)[0].values.count === 1){
-        question.innerHTML = "you're thinking of" + getAll(obj)[0].values[0][0] + "!"
-        return "gameComplete"
+        return "complete"
     }
-    else if(getAll(obj)[0].values.count === 0){question.innerHTML = "sorry, I couldn't guess your character :("}
+    else if(getAll(obj)[0].values.count === 0){return "none"}
     else if(highEffect <= 7){
         let descList = []
-        for (const person in getAll(obj)[0].values){
+        for (const person of getAll(obj)[0].values){
             descList.push({'person':person[0], 'desc':person[1], 'occupations':person[3], 'P':person[7]}) // change index for occupationLabel, P.
             let words = getDesc(descList)
-            for(const item in words){
+            for(const item of words){
                 if(item.organisation.length > 0){
                     // organisation question
                 }else{
@@ -69,12 +71,32 @@ function special(){
 
         yesButton.addEventListener("click", politician, {once: true});
         noButton.addEventListener("click", noPress, {once: true});
+    }else{}
+}
+function generate() {
+    yesButton.style.display = "block";
+    noButton.style.display = "block";
+    start.style.display = "none";
+
+    special()
+    let property = getQuestion();
+    if(property === "complete"){question.innerHTML = "you're thinking of" + getAll(obj)[0].values[0][0] + "!"}
+    else if(property === "none") question.innerHTML = "sorry, I couldn't guess your character :("
+    else{
+        let value = getPopular(property, obj)
+
+        question.innerHTML = statements[property] + value + "?"
+        function yes(){obj[property].push(value); generate()}
+        function no(){obj[property].push("NOT " + value); generate()}
+
+        yesButton.addEventListener("click", yes, {once: true});
+        noButton.addEventListener("click", no, {once: true});
     }
 }
-function generateQuestion(){
-    let ask = null;
 
-}
-
-// if (obj.special.includes("employer")) order.push("employer");
-// if (obj.special.includes("political party")) order.push("political party");
+init().then(() => {
+    yesButton.style.display = "none";
+    noButton.style.display = "none"
+    question.innerHTML = "think of a non-fictional human character, answer truthfully, and I'll read your mind >:)"
+    start.addEventListener("click", generate)
+});
