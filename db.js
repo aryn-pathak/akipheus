@@ -1,5 +1,27 @@
 let db
 let obj = {"citizenshipLabel":[], "sexLabel":[], "occupationLabel":[], "field":[], "special":[], "political party":[], "employer":[], "alive":[]};
+import nlp from 'compromise'
+nlp.addWords({
+    'prime minister':    'Title',
+    'vice president':    'Title',
+    'attorney general':  'Title',
+    'foreign minister':  'Title',
+    'crown prince':      'Title',
+    'field marshal':     'Title',
+    'managing director': 'Title',
+    'venture capitalist':'Title',
+    'chief rabbi':       'Title',
+    'dalai lama':        'Title',
+    'chief minister':    'Title',
+    'finance minister':  'Title',
+    'defence minister':  'Title',
+    'co-founder':    'Title',
+    'chief executive officer':  'Title',
+    'racing driver': 'Title',
+    'soccer player': 'Title',
+    'association football player': 'Title',
+}) // list of common multi-word titles
+
 
 export async function init(){
     console.log("initializing");
@@ -78,4 +100,14 @@ export function getPopular(property, obj){         // property is the key name (
             break;}
     }
     return result;
+}
+export function getDesc(descList){
+    for (const person in descList){
+        let returnList = []
+        let desc = descList.desc
+        let organisation = desc.organisations().out('array')
+        let nouns = desc.nouns().out('array').filter(item => !desc.occupations.includes(item)) // removes occupations already filtered, leaves titles and uncovered occupations
+        returnList.push({'person':person.person, 'organisation':organisation,'nouns':nouns})
+        return returnList
+    }
 }
