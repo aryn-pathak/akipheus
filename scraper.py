@@ -24,7 +24,7 @@ WHERE {
     BIND(COALESCE(?followersExist, 0) AS ?rawCount)      # some people don't have a mentioned "followers" property. To avoid breaking the FILTER set NIL to zero
     
     OPTIONAL {?person wdt:P970 ?dateDeath .}
-    BIND(IF(bound(?deathDate), "no", "yes") AS ?alive)
+    BIND(IF(bound(?deathDate), "deceased", "alive") AS ?alive)
     
     OPTIONAL {?person p:P108 ?emp
     ?emp prov:wasDerivedFrom ?ref ;

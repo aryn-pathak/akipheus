@@ -13,14 +13,15 @@ df = df.drop_duplicates(subset=['occupationLabel', 'citizenshipLabel', 'sexLabel
 
 grouped = df.groupby('personLabel').agg({
     'personDescription': 'first',
-    'sexLabel': 'first',
+    'sexLabel': lambda x: json.dumps(list(set(x))),
     'occupationLabel': lambda x: json.dumps(list(set(x))),
     'citizenshipLabel': lambda x: json.dumps(list(set(x))),
     'followers':'first',
     'sitelinks': 'first',
-    'alive': 'first',
-    'special':'first',
+    'alive': lambda x: json.dumps(list(set(x))),
+    'special': lambda x: json.dumps(list(set(x))),
     'political party': lambda x: json.dumps(list(set(x))),
+    'employer': lambda x: json.dumps(list(set(x))),
      'P': 'first'
 }).reset_index()
 
