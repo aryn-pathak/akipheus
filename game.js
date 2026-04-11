@@ -1,5 +1,4 @@
-import {getAll, getPopular} from "./db";
-import nlp from 'compromise'
+import {getAll, getPopular, getDesc} from "./db";
 
 const yesButton = document.getElementById("yes")
 const noButton = document.getElementById("no")
@@ -19,7 +18,7 @@ let order = ["alive", "sexLabel", "citizenshipLabel", "special", "field", "occup
 
 function getQuestion(obj){
     let effectProperty;
-    let highEffect
+    let highEffect = null;
 
     for(const property in order){
         let people = { ...obj, [property]: obj[property].concat(getPopular(property, obj)) }
@@ -33,16 +32,25 @@ function getQuestion(obj){
             effectProperty = property
         }else{}
     }
-    if(higheffect <= 6){
+    if(highEffect <= 6){
         return effectProperty
-    }else if(getAll(obj)[0].values.count == 1){
+    }else if(getAll(obj)[0].values.count === 1){
         question.innerHTML("you're thinking of" + getAll(obj)[0].values[0][0] + "!")
         return "gameComplete"
     }
-    else if(getAll(obj)[0].values.count == 0){question.innerHTML("sorry, I couldn't guess your character :(")}
+    else if(getAll(obj)[0].values.count === 0){question.innerHTML("sorry, I couldn't guess your character :(")}
     else if(highEffect <= 7){
+        let descList = []
         for (const person in getAll(obj)[0].values){
-            let desc = person[1]
+            descList.push({'person':person[0], 'desc':person[1], 'occupations':person[3], 'P':person[7]}) // change index for occupationLabel, P.
+            let words = getDesc(descList)
+            for(const item in words){
+                if(item.organisation.length > 0){
+                    // organisation question
+                }else{
+                    // noun question
+                }
+            }
         }
     }
 }
