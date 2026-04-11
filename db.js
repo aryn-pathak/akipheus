@@ -34,8 +34,7 @@ export async function init(){
     console.log("initialised");
 }
 
-// obj is an object expected to be in format { citizenshipLabel : ["India", "NOT United States"], occupationLabel : ["actor", "NOT scientist"] ...}
-// anything with NOT is something answered "no" to.
+// obj is an object expected to be in format { citizenshipLabel : ["India", "NOT United States"], occupationLabel : ["actor", "NOT scientist"] ...} and anything with NOT is something answered "no" to.
 
 export function getAll(o) {
     let query = "SELECT * FROM humansFlat WHERE sitelinks > 1"
@@ -57,20 +56,21 @@ export function getAll(o) {
     }
     return result;
 }
-function bayesian(M, C, S, R){          // M: avg P of all, C: weight, S: sum of P for particular, R: avg P of particular
-    return ((C*M)+(S*R))/(C+S)
-} // is this right??
+function bayesian(M, S, R){          // M: global P avg, C: weight, S: no of occurrences, R: avg P of particular
+    return ((20*M)+(S*R))/(20+S)
+}
 // getAll() returns columns and values separately, values is an array, not key-value pairs
-export function getPopular(property, obj){         // property is the key name (citizenshipLabel or occupationLabel), obj is obj.
+export function getPopular(property, obj){
     let people = getAll(obj)[0].values
     let index
     let raw = []
 
-    index = (property === "citizenshipLabel") ? 4 : 3; // need to change to allow support for all properties
+    index = (property === "citizenshipLabel") ? 4 : 3; // need to change indices to match, allow sex/citizenship/occupation/field/political party/employer
 
     people.forEach((item) => {
-        const object = {"name":item[index], "P":item[7]}    // this too
-        // FUCK item[index] is an array itself
+        for(name of item){
+            const object = {"name": name, "P"item[7]};  // change to P's index
+        }
         raw.push(object)
     })
 
@@ -80,14 +80,13 @@ export function getPopular(property, obj){         // property is the key name (
             unique.push(item.name)
         }
     })
-
     const M = raw.reduce((acc, o)=>acc + o.P, 0);/unique.length
 
     let aggregate = []
     for (const item of unique){
         let filtered = raw.filter(o => o.name === item).map(o => o.P);
         let totalP = filtered.reduce((acc, no)=>acc + no);
-        aggregate.push({"name":item, "S":totalP, "B":bayesian(M, C, totalP, (totalP/filtered.length))});
+        aggregate.push({"name":item, "S":filtered.length, "B":bayesian(M, C, totalP, (totalP/filtered.length))});
     }
     aggregate.sort((a, b)=>b.B-a.B)
 
