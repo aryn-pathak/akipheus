@@ -1,8 +1,9 @@
 import {getAll, getPopular} from "./db";
+import nlp from 'compromise'
 
-yesButton = document.getElementById("yes")
-noButton = document.getElementById("no")
-question = document.getElementById("question")
+const yesButton = document.getElementById("yes")
+const noButton = document.getElementById("no")
+const question = document.getElementById("question")
 
 let statements = {          // statements for framing questions about particular characteristics
     "sexLabel":"is your character a ",
@@ -17,20 +18,31 @@ let statements = {          // statements for framing questions about particular
 let order = ["alive", "sexLabel", "citizenshipLabel", "special", "field", "occupationLabel"];
 
 function getQuestion(obj){
-    let affectProperty;
-    let highAffect
+    let effectProperty;
+    let highEffect
 
     for(const property in order){
         let people = { ...obj, [property]: obj[property].concat(getPopular(property, obj)) }
         let yes = getAll(people)[0].values.count
         people = { ...obj, [property]: obj[property].concat("NOT " + getPopular(property, obj)) }
         let no = getAll(people)[0].values.count
-        let affect = getAll(obj)-((yes + no)/2)
+        let effect = getAll(obj)-((yes + no)/2)
 
-        if(affect > highAffect){
-            highAffect = affect
-            affectProperty = property
+        if(effect > highEffect){
+            highEffect = effect
+            effectProperty = property
         }else{}
     }
-    return affectProperty
+    if(higheffect <= 6){
+        return effectProperty
+    }else if(getAll(obj)[0].values.count == 1){
+        question.innerHTML("you're thinking of" + getAll(obj)[0].values[0][0] + "!")
+        return "gameComplete"
+    }
+    else if(getAll(obj)[0].values.count == 0){question.innerHTML("sorry, I couldn't guess your character :(")}
+    else if(highEffect <= 7){
+        for (const person in getAll(obj)[0].values){
+            let desc = person[1]
+        }
+    }
 }
