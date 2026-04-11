@@ -105,9 +105,14 @@ export function getDesc(descList){
     for (const person in descList){
         let returnList = []
         let desc = descList.desc
+
         let organisation = desc.organisations().out('array')
         let nouns = desc.nouns().out('array').filter(item => !desc.occupations.includes(item)) // removes occupations already filtered, leaves titles and uncovered occupations
-        returnList.push({'person':person.person, 'organisation':organisation,'nouns':nouns})
+        returnList.push({'person':person.person, 'organisation':organisation,'nouns':nouns, 'P':person.P})
+
+        returnList.sort((a, b) => b.P - a.P)
+        for(const item in returnList){delete item.P}
+
         return returnList
     }
 }
