@@ -106,20 +106,20 @@ export function getDesc(descList){
         let desc = descList.desc
 
         let organisation = desc.organisations().out('array')
-        let nouns = desc.nouns().out('array').filter(item => !desc.occupations.includes(item)) // removes occupations already filtered, leaves titles and uncovered occupations
+        let nouns = desc.nouns().out('array').filter(item =>
+            !obj.occupationLabel.includes(item) &&
+            !obj.occupationLabel.includes(`NOT ${item}`)
+        ) // removes occupations already filtered, leaves titles and uncovered occupations
         list.push({'person':person.person, 'organisation':organisation,'nouns':nouns, 'P':person.P})
-
-        list.sort((a, b) => b.P - a.P)
-        for(const item of list){delete item.P}
-
-        for(const item of list){
-            for(const org of organisation){
-                returnList.push({'person':item.person, 'question':`is your character associated with ${org}`})
-            }
-            for(const noun of nouns){
-                returnList.push({'person':noun.person, 'question':`is your character a ${noun}`})
-            }
-        }
     }
-    return list
+    list.sort((a, b) => b.P - a.P)
+    for(const item of list){delete item.P}
+
+    let questions = []
+    for (const item of list){
+        let questionsList = {'person':item.person, 'questions':[]}
+        for (const org of item.organisation){questionsList['questions'].push(`is your character associated with ${org}`)}
+        for (const noun of item.nouns){questionsList['questions'].push(`is your character associated with ${noun}`)}
+    }
+    return questions
 }
