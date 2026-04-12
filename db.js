@@ -69,7 +69,7 @@ export function getPopular(property, obj){
 
     people.forEach((item) => {
         for(name of item){
-            const object = {"name": name, "P"item[7]};  // change to P's index
+            const object = {"name": name, "P":item[7]};  // change to P's index
         }
         raw.push(object)
     })
@@ -100,16 +100,26 @@ export function getPopular(property, obj){
     return result;
 }
 export function getDesc(descList){
+    let list = []
     let returnList = []
     for (const person of descList){
         let desc = descList.desc
 
         let organisation = desc.organisations().out('array')
         let nouns = desc.nouns().out('array').filter(item => !desc.occupations.includes(item)) // removes occupations already filtered, leaves titles and uncovered occupations
-        returnList.push({'person':person.person, 'organisation':organisation,'nouns':nouns, 'P':person.P})
+        list.push({'person':person.person, 'organisation':organisation,'nouns':nouns, 'P':person.P})
 
-        returnList.sort((a, b) => b.P - a.P)
-        for(const item of returnList){delete item.P}
+        list.sort((a, b) => b.P - a.P)
+        for(const item of list){delete item.P}
+
+        for(const item of list){
+            for(const org of organisation){
+                returnList.push({'person':item.person, 'question':`is your character associated with ${org}`})
+            }
+            for(const noun of nouns){
+                returnList.push({'person':noun.person, 'question':`is your character a ${noun}`})
+            }
+        }
     }
-    return returnList
+    return list
 }
