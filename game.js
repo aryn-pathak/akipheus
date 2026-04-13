@@ -54,6 +54,18 @@ function getQuestion(){
                 }
             }
         }
+        let questionList = getDesc(descList)
+        for (let item of questionList){
+            for(let i=0; i<item.questions.length; i++){
+                question.innerHTML = item.questions[i]
+                function yes(i){
+                    if(i===item.questions.length-1){return `you're thinking of ${item.person}`}
+                    else{item.yes += 1}
+                }
+                yesButton.addEventListener("click", function(){yes})
+                noButton.addEventListener("click", function(){})
+            }
+        }
     }
 }
 function special(){
