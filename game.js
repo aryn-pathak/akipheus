@@ -34,38 +34,43 @@ function getQuestion(){
             effectProperty = property
         }else{}
     }
-
     if(highEffect <= 6){
         return effectProperty
     }else if(getAll(obj)[0].values.count === 1){
         return "complete"
     }
     else if(getAll(obj)[0].values.count === 0){return "none"}
-    else if(highEffect <= 7){
+
+    else if(highEffect <= 5){
         let descList = []
         for (const person of getAll(obj)[0].values){
             descList.push({'person':person[0], 'desc':person[1], 'occupations':person[3], 'P':person[7]}) // change index for occupationLabel, P.
-            let words = getDesc(descList)
-            for(const item of words){
-                if(item.organisation.length > 0){
-                    // organisation question
-                }else{
-                    // noun question
-                }
-            }
         }
         let questionList = getDesc(descList)
-        for (let item of questionList){
-            for(let i=0; i<item.questions.length; i++){
-                question.innerHTML = item.questions[i]
-                function yes(i){
-                    if(i===item.questions.length-1){return `you're thinking of ${item.person}`}
-                    else{item.yes += 1}
-                }
-                yesButton.addEventListener("click", function(){yes})
-                noButton.addEventListener("click", function(){})
+
+        let personIndex = 0;
+        let questionIndex = 0
+
+        function showQuestion(){question.innerHTML = questionList[personIndex][questionIndex];}
+        showQuestion();
+
+        yesButton.addEventListener("click", function(){
+            if(questionIndex===questionList[personIndex].questions.length-1){question.innerHTML = `you're thinking of ${questionList[personIndex].person}`}
+            else{questionList[personIndex].yes += 1}
+            questionIndex += 1
+            if (questionIndex === questionList[personIndex].questions.length-1){personIndex += 1; questionIndex = 0; showQuestion()}
+            if (personIndex === questionList.length){
+                question.innerHTML = `you're thinking of ${questionList.reduce((a, b) => {return (a.yes > b.yes) ? a:b}).person}`
             }
-        }
+        })
+        noButton.addEventListener("click", function(){
+            questionIndex += 1
+            if (questionIndex === questionList[personIndex].length-1){personIndex += 1; questionIndex = 0;}
+            showQuestion()
+            if (personIndex === questionList.length){
+                question.innerHTML = `you're thinking of ${questionList.reduce((a, b) => {return (a.yes > b.yes) ? a:b}).person}`
+            }
+        })
     }
 }
 function special(){
@@ -92,10 +97,10 @@ function generate() {
 
     special()
     let property = getQuestion();
+    let value = getPopular(property, obj)
     if(property === "complete"){question.innerHTML = "you're thinking of" + getAll(obj)[0].values[0][0] + "!"}
     else if(property === "none") question.innerHTML = "sorry, I couldn't guess your character :("
-    else{
-        let value = getPopular(property, obj)
+    else if(property in statements){
 
         question.innerHTML = statements[property] + value + "?"
         function yes(){obj[property].push(value); generate()}
@@ -103,6 +108,8 @@ function generate() {
 
         yesButton.addEventListener("click", yes, {once: true});
         noButton.addEventListener("click", no, {once: true});
+    }else{
+        question.innerHTML = getQuestion();
     }
 }
 
