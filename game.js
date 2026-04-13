@@ -52,47 +52,24 @@ async function getQuestion() {
             descList.push({'person': person[0], 'desc': person[1], 'occupations': person[3], 'P': person[7]}) // change index for occupationLabel, P.
         }
         let questionList = getDesc(descList)
-
-        let personIndex = 0;
-        let questionIndex = 0
-
-        function showQuestion() {
-            question.innerHTML = questionList[personIndex][questionIndex];
-        }
-
-        showQuestion();
-
-        let answer = await waitForClick()
-        if(answer==="yes"){
-            if (questionIndex === questionList[personIndex].questions.length - 1) {
-                question.innerHTML = `you're thinking of ${questionList[personIndex].person}`
-            } else {
-                questionList[personIndex].yes += 1
-            }
-            questionIndex += 1
-            if (questionIndex === questionList[personIndex].questions.length - 1) {
-                personIndex += 1;
-                questionIndex = 0;
-                showQuestion()
-            }
-            if (personIndex === questionList.length) {
-                question.innerHTML = `you're thinking of ${questionList.reduce((a, b) => {
-                    return (a.yes > b.yes) ? a : b
-                }).person}`
-            }
-        }else{
-            questionIndex += 1
-            if (questionIndex === questionList[personIndex].length - 1) {
-                personIndex += 1;
-                questionIndex = 0;
-            }
-            showQuestion()
-            if (personIndex === questionList.length) {
-                question.innerHTML = `you're thinking of ${questionList.reduce((a, b) => {
-                    return (a.yes > b.yes) ? a : b
-                }).person}`
+        for(let pIndex = 0; pIndex < questionList.length; pIndex++) {
+            let person = questionList[pIndex];
+            for(let qIndex = 0;qIndex < questionList.questions.length; qIndex++) {
+                question.innerHTML = questionList.questions[qIndex];
+                let answer = await waitForClick();
+                if(answer==="yes"){
+                    person.yes+=1
+                    if(qIndex === questionList.length-1){
+                    question.innerHTML = `you're thinking of ${person.person}!`}
+                    yesButton.style.display = "none";
+                    noButton.style.display = "none"
+                    return "found"
+                }
             }
         }
+        let bestMatch = questionList.reduce((a, b) => (a.yes > b.yes) ? a : b);
+        question.innerHTML = `you're thinking of ${bestMatch.person}!`;
+        return ""
     }else{return effectProperty}
 }
 async function special(){
