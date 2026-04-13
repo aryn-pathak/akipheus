@@ -15,9 +15,17 @@ let statements = {          // statements for framing questions about particular
     "alive":"is your character ",
 }
 let properties = ["alive", "sexLabel", "citizenshipLabel", "field", "occupationLabel"];
+
+function waitForClick() {
+    return new Promise((resolve) => {
+        yesButton.addEventListener("click", () => resolve("yes"), { once: true });
+        noButton.addEventListener("click", () => resolve("no"), { once: true });
+    });
+}
+
 function getQuestion(){
     let effectProperty;
-    let highEffect = null;
+    let highEffect = -Infinity;
 
     if (obj.special.includes("employed")) properties.push("employed")
     if (obj.special.includes("politician")) properties.push("politician")
@@ -27,7 +35,7 @@ function getQuestion(){
         let yes = getAll(people)[0].values.count
         people = { ...obj, [property]: obj[property].concat("NOT " + getPopular(property, obj)) }
         let no = getAll(people)[0].values.count
-        let effect = getAll(obj)-((yes + no)/2)
+        let effect = getAll(obj)[0].values.count - ((yes + no)/2)
 
         if(effect > highEffect){
             highEffect = effect
@@ -73,44 +81,37 @@ function getQuestion(){
         })
     }
 }
-function special(){
+async function special(){
     if(obj.special.length <= 0){
         question.innerHTML = "is your character associated with a political party?"
-
-        function politician(){obj.special.push("politician")}
-        function employed(){obj.special.push("employed")}
-        function no(){obj.special.push("no")}
-        function noPress(){
+        let answer = await waitForClick();
+        if(answer === "yes"){obj.special.push("politician")}
+        if(answer==="no"){
             question.innerHTML = "is your character employed by a corporation?"
-            yesButton.addEventListener("click", employed, {once: true});
-            noButton.addEventListener("click", no, {once: true});
+            let employedAns = await waitForClick();
+            if(employedAns === "yes"){obj.special.push("employed")}
+            else{obj.special.push("no")}
         }
-
-        yesButton.addEventListener("click", politician, {once: true});
-        noButton.addEventListener("click", noPress, {once: true});
-    }else{}
+    }
 }
-function generate() {
+async function generate() {
     yesButton.style.display = "block";
     noButton.style.display = "block";
     start.style.display = "none";
 
-    special()
+    await special()
     let property = getQuestion();
     let value = getPopular(property, obj)
     if(property === "complete"){question.innerHTML = "you're thinking of" + getAll(obj)[0].values[0][0] + "!"}
     else if(property === "none") question.innerHTML = "sorry, I couldn't guess your character :("
     else if(property in statements){
 
-        question.innerHTML = statements[property] + value + "?"
-        function yes(){obj[property].push(value); generate()}
-        function no(){obj[property].push("NOT " + value); generate()}
-
-        yesButton.addEventListener("click", yes, {once: true});
-        noButton.addEventListener("click", no, {once: true});
-    }else{
-        question.innerHTML = getQuestion();
-    }
+        question.innerHTML = statements[property] + value + "?"  // ✅ keep this
+        const answer = await waitForClick();
+        if (answer === "yes") { obj[property].push(value) }
+        else { obj[property].push("NOT " + value) }
+        await generate();
+    }else{getQuestion();}
 }
 
 init().then(() => {
