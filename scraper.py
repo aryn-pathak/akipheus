@@ -12,41 +12,50 @@ endpoint_url = "https://query.wikidata.org/sparql"
 sparql = SPARQLWrapper(endpoint_url, agent="Akigator/1.0 (thearyanpathak@gmail.com) An open source educational project to recreate how Akinator (classic character guessing game) works. Uses Wikidata's database on humans instead of proprietary closed-source character information like akinator.")
 
 query = """
-SELECT DISTINCT ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks ?alive ?special (?employerLabel AS employer) (?politicalPartyLabel AS political party) (MAX(?rawCount) AS ?followers)
+SELECT DISTINCT ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks ?alive ?special (?employerItemLabel AS ?employer) (?politicalPartyItemLabel AS ?politicalParty) ?followers
 WHERE {
+
+{
+    SELECT ?person (MAX(?rawCount) AS ?followers) ?sitelinks
+    WHERE{
+        ?person wdt:P31 wd:Q5   .
+        ?person wikibase:sitelinks ?sitelinks   .
+        
+        OPTIONAL {?person wdt:P8687 ?followersExist .}
+        BIND(COALESCE(?followersExist, 0) AS ?rawCount)
+    }
+    GROUP BY ?person ?sitelinks
+    HAVING (
+        (MAX(?rawCount) > 1000000 && ?sitelinks > 15) ||
+        (MAX(?rawCount) > 2000000) ||
+        (?sitelinks > 34 && MAX(?rawCount) = 0)
+    )
+}
+
     ?person   wdt:P31 wd:Q5 ;
               wdt:P27 ?citizenship ;
               wdt:P21 ?sex ;
-              wikibase:sitelinks ?sitelinks ;
               wdt:P106 ?occupation .
-
-    OPTIONAL {?person wdt:P8687 ?followersExist .}
-    BIND(COALESCE(?followersExist, 0) AS ?rawCount)      # some people don't have a mentioned "followers" property. To avoid breaking the FILTER set NIL to zero
     
-    OPTIONAL {?person wdt:P970 ?dateDeath .}
-    BIND(IF(bound(?deathDate), "deceased", "alive") AS ?alive)
+    OPTIONAL {?person wdt:P570 ?dateDeath .}
+    BIND(IF(bound(?dateDeath), "deceased", "alive") AS ?alive)
     
-    OPTIONAL {?person p:P108 ?emp
-    ?emp prov:wasDerivedFrom ?ref ;
-        ps:P108 ?employer .}
-    
-    OPTIONAL {?person p:P102 ?pp
-    ?pp prov:wasDerivedFrom ?ref ;
-        ps:P102 ?pp .}
+    OPTIONAL {
+        ?person p:P108 ?employerStmt .
+        ?employerStmt ps:P108 ?employerItem .
+    }
+    OPTIONAL {
+        ?person p:P102 ?partyStmt .
+        ?partyStmt ps:P102 ?politicalPartyItem .
+    }
     
     BIND(
-    IF(bound(?politicalParty), "politician", 
-        IF(bound(?employer), "employed", "no"))
+    IF(bound(?politicalPartyItem), "politician", 
+        IF(bound(?employerItem), "employed", "no"))
         AS ?special)
         
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
-GROUP BY ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks ?alive ?special ?employerLabel ?politicalPartyLabel
-HAVING (
-    (MAX(?rawCount) > 1000000 && ?sitelinks > 15) ||
-    (MAX(?rawCount) > 2000000) ||
-    (?sitelinks > 34 && MAX(?rawCount) = 0)
-)
 """
 sparql.setQuery(query)
 sparql.setReturnFormat(JSON)
