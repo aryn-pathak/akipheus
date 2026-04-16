@@ -1,0 +1,88 @@
+.buttons{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+img {
+    position: relative;
+    right: -500px;
+    width: 30%;
+    margin-top: 50px;
+    margin-bottom: -70px;
+}
+body{
+    background-color: #FFEF91
+}
+.question{
+    font-family: "Cabin Sketch", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 32px;
+}
+.title{
+        font-family: "Freckle Face", system-ui;
+        font-weight: 400;
+        font-style: normal;
+        font-size: 75px;
+}
+.start{
+    background-image: url("./assets/start_static.jpeg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    width: 200px;
+    height: 100px;
+    background-color: transparent;
+    border: none;
+}
+.start:active{
+    background-image: url("./assets/start_press.jpeg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    width: 200px;
+    height: 100px;
+    background-color: transparent;
+    border: none;
+}
+.yes{
+    background-image: url("./assets/yes_static.jpeg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    width: 200px;
+    height: 100px;
+    background-color: transparent;
+    border: none;
+}
+.yes:active{
+    background-image: url("./assets/yes_press.jpeg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    width: 200px;
+    height: 100px;
+    background-color: transparent;
+    border: none;
+}
+.no{
+    background-image: url("./assets/no_static.jpeg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    width: 200px;
+    height: 100px;
+    background-color: transparent;
+    border: none;
+}
+.no:active{
+    background-image: url("./assets/no_press.jpeg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    width: 200px;
+    height: 100px;
+    background-color: transparent;
+    border: none;
+}
