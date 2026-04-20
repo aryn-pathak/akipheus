@@ -9,52 +9,59 @@ import pandas as pd
 import sqlite3
 
 endpoint_url = "https://query.wikidata.org/sparql"
-sparql = SPARQLWrapper(endpoint_url, agent="Akigator/1.0 (thearyanpathak@gmail.com) An open source educational project to recreate how Akinator (classic character guessing game) works. Uses Wikidata's database on humans instead of proprietary closed-source character information like akinator.")
+sparql = SPARQLWrapper(endpoint_url,agent="Akigator/1.0 (thearyanpathak@gmail.com) An open source educational project to recreate how Akinator (classic character guessing game) works. Uses Wikidata's database on humans instead of proprietary closed-source character information like akinator.")
 
 query = """
-SELECT DISTINCT ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks ?alive ?special (?employerItemLabel AS ?employer) (?politicalPartyItemLabel AS ?politicalParty) ?followers
+SELECT ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks ?alive ?special (?employerItemLabel AS ?employer) (?politicalPartyItemLabel AS ?politicalParty) ?followers
 WHERE {
-
-{
-    SELECT ?person (MAX(?rawCount) AS ?followers) ?sitelinks
-    WHERE{
-        ?person wdt:P31 wd:Q5   .
-        ?person wikibase:sitelinks ?sitelinks   .
-        
-        OPTIONAL {?person wdt:P8687 ?followersExist .}
-        BIND(COALESCE(?followersExist, 0) AS ?rawCount)
-    }
-    GROUP BY ?person ?sitelinks
-    HAVING (
-        (MAX(?rawCount) > 1000000 && ?sitelinks > 15) ||
-        (MAX(?rawCount) > 2000000) ||
-        (?sitelinks > 34 && MAX(?rawCount) = 0)
-    )
-}
-
-    ?person   wdt:P31 wd:Q5 ;
-              wdt:P27 ?citizenship ;
+    {
+        SELECT ?person ?sitelinks ?followers
+        WHERE{
+                {
+                    SELECT ?person ?sitelinks (MAX(?f) AS ?followers)
+                    WHERE {
+                        ?person wdt:P31 wd:Q5   .
+                        ?person wikibase:sitelinks ?sitelinks   .
+                        ?person wdt:P8687 ?f    .
+                        FILTER(?f > 500000 && ?sitelinks > 14 || ?f > 1000000)
+                    }
+                    GROUP BY ?person ?sitelinks
+                }
+                UNION
+                {
+                    SELECT ?person ?sitelinks
+                    WHERE{
+                        ?person wdt:P31 wd:Q5   .
+                        ?person wikibase:sitelinks ?sitelinks   .
+                        FILTER NOT EXISTS {?person wdt:P8687 ?f}
+                        BIND(0 AS ?followers)
+                        FILTER(sitelinks > 34)
+                    }
+                }
+            }
+        }
+    ?person   wdt:P27 ?citizenship ;
               wdt:P21 ?sex ;
               wdt:P106 ?occupation .
-    
+
     OPTIONAL {?person wdt:P570 ?dateDeath .}
     BIND(IF(bound(?dateDeath), "deceased", "alive") AS ?alive)
-    
+
     OPTIONAL {
-        ?person p:P108 ?employerStmt .
-        ?employerStmt ps:P108 ?employerItem .
+        ?person wdt:P108 ?employerItem .
     }
     OPTIONAL {
-        ?person p:P102 ?partyStmt .
-        ?partyStmt ps:P102 ?politicalPartyItem .
+        ?person wdt:P102 ?politicalPartyItem .
     }
-    
+
     BIND(
-    IF(bound(?politicalPartyItem), "politician", 
+    IF(bound(?politicalPartyItem), "politician",
         IF(bound(?employerItem), "employed", "no"))
         AS ?special)
-        
-    SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+
+    SERVICE wikibase:label {
+        bd:serviceParam wikibase:language "en".
+      }
 }
 """
 sparql.setQuery(query)
