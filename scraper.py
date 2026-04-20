@@ -12,57 +12,60 @@ endpoint_url = "https://query.wikidata.org/sparql"
 sparql = SPARQLWrapper(endpoint_url,agent="Akigator/1.0 (thearyanpathak@gmail.com) An open source educational project to recreate how Akinator (classic character guessing game) works. Uses Wikidata's database on humans instead of proprietary closed-source character information like akinator.")
 
 query = """
-SELECT ?personLabel ?personDescription ?sexLabel ?occupationLabel ?citizenshipLabel ?sitelinks ?alive ?special (?employerItemLabel AS ?employer) (?politicalPartyItemLabel AS ?politicalParty) ?followers
+SELECT ?personLabel ?personDescription ?sexLabel
+       (GROUP_CONCAT(DISTINCT ?occupationsLabel; SEPARATOR=",") AS ?occupationLabel)
+       (GROUP_CONCAT(DISTINCT ?citizenshipsLabel; SEPARATOR=",") AS ?citizenshipLabel)
+       ?sitelinks ?alive ?special
+       (GROUP_CONCAT(DISTINCT ?employerItemLabel; SEPARATOR=",") AS ?employerLabel)
+       (SAMPLE(?politicalPartyItemLabel) AS ?politicalParty)
+       ?followers
 WHERE {
     {
-        SELECT ?person ?sitelinks ?followers
-        WHERE{
-                {
-                    SELECT ?person ?sitelinks (MAX(?f) AS ?followers)
-                    WHERE {
-                        ?person wdt:P31 wd:Q5   .
-                        ?person wikibase:sitelinks ?sitelinks   .
-                        ?person wdt:P8687 ?f    .
-                        FILTER(?f > 500000 && ?sitelinks > 14 || ?f > 1000000)
-                    }
-                    GROUP BY ?person ?sitelinks
-                }
-                UNION
-                {
-                    SELECT ?person ?sitelinks
-                    WHERE{
-                        ?person wdt:P31 wd:Q5   .
-                        ?person wikibase:sitelinks ?sitelinks   .
-                        FILTER NOT EXISTS {?person wdt:P8687 ?f}
-                        BIND(0 AS ?followers)
-                        FILTER(sitelinks > 34)
-                    }
-                }
-            }
+        SELECT ?person ?sitelinks (MAX(?f) AS ?followers)
+        WHERE {
+            ?person wdt:P8687 ?f .
+            hint:Prior hint:runFirst true .
+            hint:Prior hint:rangeSafe true .
+            ?person wdt:P31 wd:Q5 .
+            ?person wikibase:sitelinks ?sitelinks .
+            FILTER(?f > 500000 && ?sitelinks > 14)
         }
-    ?person   wdt:P27 ?citizenship ;
-              wdt:P21 ?sex ;
-              wdt:P106 ?occupation .
+        GROUP BY ?person ?sitelinks
+    }
+    UNION
+    {
+        ?person wdt:P31 wd:Q5 ;
+                wikibase:sitelinks ?sitelinks .
+        hint:Prior hint:rangeSafe true .
+        FILTER(?sitelinks > 34)
+        MINUS { ?person wdt:P8687 [] }
+        BIND(0 AS ?followers)
+    }
 
-    OPTIONAL {?person wdt:P570 ?dateDeath .}
+    ?person wdt:P27 ?citizenships ;
+            wdt:P21 ?sex ;
+            wdt:P106 ?occupations .
+
+    OPTIONAL { ?person wdt:P570 ?dateDeath . }
     BIND(IF(bound(?dateDeath), "deceased", "alive") AS ?alive)
 
-    OPTIONAL {
-        ?person wdt:P108 ?employerItem .
-    }
-    OPTIONAL {
-        ?person wdt:P102 ?politicalPartyItem .
-    }
+    OPTIONAL { ?person wdt:P108 ?employerItem . }
+    OPTIONAL { ?person wdt:P102 ?politicalPartyItem . }
 
     BIND(
-    IF(bound(?politicalPartyItem), "politician",
-        IF(bound(?employerItem), "employed", "no"))
+        IF(bound(?politicalPartyItem), "politician",
+            IF(bound(?employerItem), "employed", "no"))
         AS ?special)
 
     SERVICE wikibase:label {
-        bd:serviceParam wikibase:language "en".
-      }
+        bd:serviceParam wikibase:language "en" .
+        ?citizenships rdfs:label ?citizenshipsLabel .
+        ?occupations rdfs:label ?occupationsLabel .
+        ?employerItem rdfs:label ?employerItemLabel .
+        ?politicalPartyItem rdfs:label ?politicalPartyItemLabel .
+    }
 }
+GROUP BY ?personLabel ?personDescription ?sexLabel ?sitelinks ?alive ?special ?followers
 """
 sparql.setQuery(query)
 sparql.setReturnFormat(JSON)

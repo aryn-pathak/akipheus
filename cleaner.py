@@ -32,7 +32,7 @@ def generateprompt(description, occupation, name):
         },
         {
             "role": "assistant",
-            "content": "politics"
+            "content": '["politics"]'
         },
         {
             "role": "user",
@@ -45,7 +45,7 @@ def generateprompt(description, occupation, name):
         },
         {
             "role": "assistant",
-            "content": "racing"
+            "content": '["racing"]'
         },
         {
             "role": "user",
