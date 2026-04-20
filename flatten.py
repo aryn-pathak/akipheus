@@ -13,14 +13,27 @@ df = df.drop_duplicates(subset=['occupationLabel', 'citizenshipLabel', 'sexLabel
 
 grouped = df.groupby('personLabel').agg({
     'personDescription': 'first',
-    'citizenshipLabel': lambda x: json.dumps(list(set(x))),
-    'sexLabel': lambda x: json.dumps(list(set(x))),
-    'occupationLabel': lambda x: json.dumps(list(set(x))),
-    'special': lambda x: json.dumps(list(set(x))),
-    'political party': lambda x: json.dumps(list(set(x))),
-    'employer': lambda x: json.dumps(list(set(x))),
-    'alive': lambda x: json.dumps(list(set(x))),
-
+    'citizenshipLabel': df['occupationLabel'].apply(
+        lambda x: json.dumps(x.split(','))
+    ),
+    'sexLabel': df['occupationLabel'].apply(
+        lambda x: json.dumps(x.split(','))
+    ),
+    'occupationLabel': df['occupationLabel'].apply(
+        lambda x: json.dumps(x.split(','))
+    ),
+    'special': df['occupationLabel'].apply(
+        lambda x: json.dumps(x.split(','))
+    ),
+    'political party': df['occupationLabel'].apply(
+        lambda x: json.dumps(x.split(','))
+    ),
+    'employer': lambda x: df['occupationLabel'].apply(
+        lambda x: json.dumps(x.split(','))
+    ),
+    'alive': lambda x: df['occupationLabel'].apply(
+        lambda x: json.dumps(x.split(','))
+    ),
     'followers':'first',
     'sitelinks': 'first',
     'P': 'first'
