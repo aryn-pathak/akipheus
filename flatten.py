@@ -12,6 +12,7 @@ df = pd.read_sql("SELECT * FROM humansRaw", con)
 df = df.drop_duplicates(subset=['occupationLabel', 'citizenshipLabel', 'sexLabel', 'sitelinks', 'followers'])
 
 grouped = df.groupby('personLabel').agg({
+    'personDescription': 'first',
     'citizenshipLabel': lambda x: json.dumps(list(set(x))),
     'sexLabel': lambda x: json.dumps(list(set(x))),
     'occupationLabel': lambda x: json.dumps(list(set(x))),
@@ -20,10 +21,9 @@ grouped = df.groupby('personLabel').agg({
     'employer': lambda x: json.dumps(list(set(x))),
     'alive': lambda x: json.dumps(list(set(x))),
 
-    'personDescription': 'first',
     'followers':'first',
     'sitelinks': 'first',
-     'P': 'first'
+    'P': 'first'
 }).reset_index()
 
 conditions = [

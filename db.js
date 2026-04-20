@@ -11,6 +11,7 @@ const indices = {
     'P':11,
     'field':12
 }
+import nlp from 'https://esm.sh/compromise';
 
 function match(name) {
     let item = getAll(obj)[0].values.find(o => o[0] === name);
@@ -24,8 +25,6 @@ function match(name) {
     }
     return totalNo / no;
 }
-
-import nlp from 'compromise'
 nlp.addWords({
     'prime minister':    'Title',
     'vice president':    'Title',
@@ -53,7 +52,7 @@ export async function init(){
         locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.12.0/${file}`
     });
 
-    const response = await fetch("humans.db")
+    const response = await fetch("humansClean.db")
     const buffer = await response.arrayBuffer();
     db = new SQL.Database(new Uint8Array(buffer));
     console.log("initialised");
@@ -62,7 +61,7 @@ export async function init(){
 // obj is an object expected to be in format { citizenshipLabel : ["India", "NOT United States"], occupationLabel : ["actor", "NOT scientist"] ...} and anything with NOT is something answered "no" to.
 
 export function getAll(o) {
-    let query = "SELECT * FROM humansFlat WHERE sitelinks > 1"
+    let query = "SELECT * FROM humansClean WHERE sitelinks > 1"
     for (let key of Object.keys(o)) {
         for (let filter of o[key]) {
             if (filter.startsWith("NOT "))
@@ -94,7 +93,6 @@ function bayesian(M, S, R){          // M: global P avg, C: weight, S: no of occ
 // getAll() returns columns and values separately, values is an array, not key-value pairs
 export function getPopular(property, obj){
     let people = getAll(obj)[0].values
-    let index
     let raw = []
     people.forEach((item) => {
         raw.push({"name": item[0], "P": item[indices.P]})
@@ -112,7 +110,7 @@ export function getPopular(property, obj){
     for (const item of unique){
         let filtered = raw.filter(o => o.name === item).map(o => o.P);
         let totalP = filtered.reduce((acc, no)=>acc + no);
-        aggregate.push({"name":item, "S":filtered.length, "B":bayesian(M, totalP, (totalP/filtered.length))});
+        aggregate.push({"name":item, "S":filtered.length, "B":bayesian(M, filtered.length, (totalP/filtered.length))});
     }
     aggregate.sort((a, b)=>b.B-a.B)
 
@@ -129,14 +127,14 @@ export function getPopular(property, obj){
 export function getDesc(descList){
     let list = []
     for (const person of descList){
-        let desc = person.desc
+        let desc = nlp(person.desc)
 
-        let organisation = desc.organisations().out('array')
+        let organisation = desc.organizations().out('array')
         let nouns = desc.nouns().out('array').filter(item =>
             !obj.occupationLabel.includes(item) &&
             !obj.occupationLabel.includes(`NOT ${item}`)
         ) // removes occupations already filtered, leaves titles and uncovered occupations
-        list.push({'person':person[person], 'organisation':organisation,'nouns':nouns, 'match':match(person.person)})
+        list.push({'person':person.person, 'organisation':organisation,'nouns':nouns, 'match':match(person.person)})
     }
     list.sort((a, b) => b.match - a.match)
     for(const item of list){delete item.match}

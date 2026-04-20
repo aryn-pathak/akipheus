@@ -1,4 +1,4 @@
-import {getAll, getPopular, getDesc, init, obj} from "./db";
+import {getAll, getPopular, getDesc, init, obj} from "./db.js";
 
 const yesButton = document.getElementById("yes")
 const noButton = document.getElementById("no")
@@ -27,43 +27,43 @@ async function getQuestion() {
     let effectProperty;
     let highEffect = -Infinity;
 
-    if (obj.special.includes("employed")) properties.push("employed")
-    if (obj.special.includes("politician")) properties.push("politician")
+    if (obj.special.includes("employed")) properties.push("employer")
+    if (obj.special.includes("politician")) properties.push("political party")
 
     for (const property of properties) {
         let people = {...obj, [property]: obj[property].concat(getPopular(property, obj))}
-        let yes = getAll(people)[0].values.count
+        let yes = getAll(people)[0].values.length
         people = {...obj, [property]: obj[property].concat("NOT " + getPopular(property, obj))}
-        let no = getAll(people)[0].values.count
-        let effect = getAll(obj)[0].values.count - ((yes + no) / 2)
+        let no = getAll(people)[0].values.length
+        let effect = getAll(obj)[0].values.length - ((yes + no) / 2)
 
         if (effect > highEffect) {
             highEffect = effect
             effectProperty = property
         }
     }
-    if (getAll(obj)[0].values.count === 1) {
+    if (getAll(obj)[0].values.length === 1) {
         return "complete"
-    } else if (getAll(obj)[0].values.count === 0) {
+    } else if (getAll(obj)[0].values.length === 0) {
         return "none"
     }else if (highEffect <= 5) {
         let descList = []
         for (const person of getAll(obj)[0].values) {
-            descList.push({'person': person[0], 'desc': person[1], 'occupations': person[3], 'P': person[7]}) // change index for occupationLabel, P.
+            descList.push({'person': person[0], 'desc': person[1], 'occupations': person[3], 'P': person[7]})
         }
         let questionList = getDesc(descList)
         for(let pIndex = 0; pIndex < questionList.length; pIndex++) {
             let person = questionList[pIndex];
-            for(let qIndex = 0;qIndex < questionList.questions.length; qIndex++) {
+            for(let qIndex = 0;qIndex < person.questions.length; qIndex++) {
                 question.innerHTML = questionList.questions[qIndex];
                 let answer = await waitForClick();
                 if(answer==="yes"){
                     person.yes+=1
-                    if(qIndex === questionList.length-1){
-                    question.innerHTML = `you're thinking of ${person.person}!`}
-                    yesButton.style.display = "none";
-                    noButton.style.display = "none"
-                    return "found"
+                    if(qIndex === person.questions.length-1){
+                        question.innerHTML = `you're thinking of ${person.person}!`}
+                        yesButton.style.display = "none";
+                        noButton.style.display = "none"
+                        return "found"
                 }
             }
         }
@@ -86,8 +86,8 @@ async function special(){
     }
 }
 async function generate() {
-    yesButton.style.display = "block";
-    noButton.style.display = "block";
+    yesButton.style.display = "";
+    noButton.style.display = "";
     start.style.display = "none";
 
     await special()
@@ -106,7 +106,6 @@ async function generate() {
 
 init().then(() => {
     yesButton.style.display = "none";
-    noButton.style.display = "none"
-    question.innerHTML = "think of a non-fictional human character, answer truthfully, and I'll read your mind >:)"
+    noButton.style.display = "none";
     start.addEventListener("click", generate)
 });

@@ -91,7 +91,7 @@ for item in records:
         for x in range(len(result)):
             batch[x]["field"] = result[x]
             print(f'batch {x} : {batch[x]}')
-            humansClean.append(batch)
+            humansClean.extend(batch)
 
         descriptionList = []
         occupationList = []
@@ -103,7 +103,7 @@ if descriptionList:
     result = AIclean(descriptionList, occupationList, nameList)
     for x in range(len(result)):
         batch[x]["field"] = result[x]
-        humansClean.append(batch[x])
+        humansClean.extend(batch)
 
 with (open('humansClean.json', 'w') as humans):
     json.dump(humansClean, humans, indent=4)
