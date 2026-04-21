@@ -139,12 +139,14 @@ export function getDesc(descList){
     let list = []
     for (const person of descList){
         let desc = nlp(person.desc)
-
-        let organisation = desc.organizations().out('array')
-        let nouns = desc.nouns().out('array').filter(item =>
-            !obj.occupationLabel.includes(item) &&
-            !obj.occupationLabel.includes(`NOT ${item}`)
-        ) // removes occupations already filtered, leaves titles and uncovered occupations
+        desc.match('#Demonym').remove()   // strip nationality adjectives
+        let nouns = desc.nouns().out('array').filter(phrase => {
+            let words = phrase.split(' ');
+            return !words.some(word =>
+                obj.occupationLabel.includes(word) ||
+                obj.occupationLabel.includes(`NOT ${word}`)
+            );
+        }) // removes occupations already filtered, leaves titles and uncovered occupations
         list.push({'person':person.person, 'organisation':organisation,'nouns':nouns, 'match':match(person.person)})
     }
     list.sort((a, b) => b.match - a.match)
