@@ -1,13 +1,13 @@
 let db
-export let obj = {"citizenshipLabel":[], "sexLabel":[], "occupationLabel":[], "special":[], "political party":[], "employer":[], "alive":[], "field":[]};
+export let obj = {"citizenshipLabel":[], "sexLabel":[], "occupationLabel":[], "special":[], "politicalParty":[], "employer":[], "alive":[], "field":[]};
 const indices = {
-    'citizenshipLabel':1,
-    'sexLabel':2,
-    'occupationLabel':3,
-    'special':4,
-    'political party':5,
-    'employer':6,
-    'alive':7,
+    'citizenshipLabel':2,
+    'sexLabel':3,
+    'occupationLabel':4,
+    'special':5,
+    'politicalParty':6,
+    'employer':7,
+    'alive':8,
     'P':11,
     'field':12
 }
@@ -52,7 +52,7 @@ export async function init(){
         locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.12.0/${file}`
     });
 
-    const response = await fetch("humansClean.db")
+    const response = await fetch("humans.db")
     const buffer = await response.arrayBuffer();
     db = new SQL.Database(new Uint8Array(buffer));
     console.log("initialised");
@@ -61,7 +61,7 @@ export async function init(){
 // obj is an object expected to be in format { citizenshipLabel : ["India", "NOT United States"], occupationLabel : ["actor", "NOT scientist"] ...} and anything with NOT is something answered "no" to.
 
 export function getAll(o) {
-    let query = "SELECT * FROM humansClean WHERE sitelinks > 1"
+    let query = "SELECT * FROM humansFlat WHERE sitelinks > 1"
     for (let key of Object.keys(o)) {
         for (let filter of o[key]) {
             if (filter.startsWith("NOT "))
@@ -95,7 +95,10 @@ export function getPopular(property, obj){
     let people = getAll(obj)[0].values
     let raw = []
     people.forEach((item) => {
-        raw.push({"name": item[0], "P": item[indices.P]})
+        let values = item[indices[property]] || []
+        for (const value of values) {
+            raw.push({"name": value, "P": item[indices.P]})
+        }
     })
 
     let unique = []
@@ -104,21 +107,29 @@ export function getPopular(property, obj){
             unique.push(item.name)
         }
     })
-    const M = raw.reduce((acc, o)=>acc + o.P, 0)/unique.length
 
     let aggregate = []
     for (const item of unique){
         let filtered = raw.filter(o => o.name === item).map(o => o.P);
-        let totalP = filtered.reduce((acc, no)=>acc + no);
-        aggregate.push({"name":item, "S":filtered.length, "B":bayesian(M, filtered.length, (totalP/filtered.length))});
+        let totalP = filtered.reduce((acc, no) => acc + no);
+        aggregate.push({
+            "name": item,
+            "S": filtered.length,
+            "R": totalP / filtered.length
+        });
     }
+    const M = aggregate.reduce((acc, o) => acc + o.R, 0) / aggregate.length;
+    for (const entry of aggregate) {
+        entry.B = bayesian(M, entry.S, entry.R);
+    }
+
     aggregate.sort((a, b)=>b.B-a.B)
 
     let result = ""
     for (let i=0; i<aggregate.length; i++){
         if(obj[property].includes(aggregate[i].name) ||
             obj[property].includes("NOT " + aggregate[i].name)){}
-        else{result = aggregate[i];
+        else{result = aggregate[i].name;
             break;}
     }
     return result;
