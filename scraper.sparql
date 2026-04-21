@@ -1,10 +1,8 @@
-# this query was run on wikidata hosted by QLever to avoid standard wikidata timeouts since this is a large query
-
 SELECT DISTINCT ?personLabel ?personDescription ?sexLabel
        ?occupationLabel ?citizenshipLabel
        ?sitelinks ?alive ?special
        ?employerLabel ?politicalParty ?followers
-WHERE {
+  WHERE {
     {
         SELECT ?person ?sitelinks (MAX(?f) AS ?followers)
         WHERE {
@@ -12,7 +10,7 @@ WHERE {
             ?person wdt:P31 wd:Q5 ;
                     wdt:P27 [] ; wdt:P21 [] ; wdt:P106 [] ;
                     wikibase:sitelinks ?sitelinks .
-            FILTER(?f > 500000 && ?sitelinks > 14)
+            FILTER(?f > 700000 && ?sitelinks > 14)
         }
         GROUP BY ?person ?sitelinks
     }
@@ -21,11 +19,10 @@ WHERE {
         ?person wdt:P31 wd:Q5 ;
                 wdt:P27 [] ; wdt:P21 [] ; wdt:P106 [] ;
                 wikibase:sitelinks ?sitelinks .
-        FILTER(?sitelinks > 34)
+        FILTER(?sitelinks > 45)
         FILTER NOT EXISTS { ?person wdt:P8687 [] }
         BIND(0 AS ?followers)
     }
-
     {
         SELECT ?person (GROUP_CONCAT(?occLabel; SEPARATOR=",") AS ?occupationLabel)
         WHERE {
@@ -35,7 +32,6 @@ WHERE {
         }
         GROUP BY ?person
     }
-
     {
         SELECT ?person (GROUP_CONCAT(?citLabel; SEPARATOR=",") AS ?citizenshipLabel)
         WHERE {
@@ -45,7 +41,6 @@ WHERE {
         }
         GROUP BY ?person
     }
-
     OPTIONAL {
         SELECT ?person (GROUP_CONCAT(?empLabel; SEPARATOR=",") AS ?employerLabel)
         WHERE {
@@ -55,7 +50,6 @@ WHERE {
         }
         GROUP BY ?person
     }
-
     OPTIONAL {
         SELECT ?person (SAMPLE(?ppLabel) AS ?politicalParty)
         WHERE {
@@ -65,7 +59,6 @@ WHERE {
         }
         GROUP BY ?person
     }
-
     {
         SELECT ?person (SAMPLE(?sexLbl) AS ?sexLabel)
         WHERE {
@@ -75,20 +68,26 @@ WHERE {
         }
         GROUP BY ?person
     }
-
     OPTIONAL { ?person wdt:P570 ?dateDeath . }
     BIND(IF(bound(?dateDeath), "deceased", "alive") AS ?alive)
-
     BIND(
         IF(bound(?politicalParty) && ?politicalParty != "", "politician",
             IF(bound(?employerLabel) && ?employerLabel != "", "employed", "no"))
         AS ?special)
-
     ?person rdfs:label ?personLabel .
     FILTER(LANG(?personLabel) = "en")
-
     OPTIONAL {
         ?person schema:description ?personDescription .
         FILTER(LANG(?personDescription) = "en")
     }
 }
+ORDER BY 
+  IF((CONTAINS(LCASE(?personDescription), "actor") || 
+      CONTAINS(LCASE(?personDescription), "actress"))        && ?sitelinks >= 60, 1,
+  IF((CONTAINS(LCASE(?personDescription), "singer") || 
+      CONTAINS(LCASE(?personDescription), "rapper"))         && ?sitelinks >= 60, 2,
+  IF((CONTAINS(LCASE(?personDescription), "president") || 
+      CONTAINS(LCASE(?personDescription), "prime minister")) && ?sitelinks >= 60, 3,
+  IF(CONTAINS(LCASE(?personDescription), "football")         && ?sitelinks >= 60, 4,
+                                                                                  99))))
+DESC(?followers + ?sitelinks * 10000)                                           
