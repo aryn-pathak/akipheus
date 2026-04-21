@@ -10,11 +10,11 @@ let statements = {          // statements for framing questions about particular
     "citizenshipLabel":"is your character from",
     "occupationLabel":"is your character a ",
     "field":"is your character related to ",
-    "political party":"is your character in ",
+    "politicalParty":"is your character in ",
     "employer":"is your character employed by ",
     "alive":"is your character ",
 }
-let properties = ["alive", "sexLabel", "citizenshipLabel", "field", "occupationLabel"];
+let properties = ["alive", "sexLabel", "citizenshipLabel", "occupationLabel"]; // field
 
 function waitForClick() {
     return new Promise((resolve) => {
@@ -28,14 +28,17 @@ async function getQuestion() {
     let highEffect = -Infinity;
 
     if (obj.special.includes("employed")) properties.push("employer")
-    if (obj.special.includes("politician")) properties.push("political party")
+    if (obj.special.includes("politician")) properties.push("politicalParty")
 
     for (const property of properties) {
-        let people = {...obj, [property]: obj[property].concat(getPopular(property, obj))}
-        let yes = getAll(people)[0].values.length
-        people = {...obj, [property]: obj[property].concat("NOT " + getPopular(property, obj))}
-        let no = getAll(people)[0].values.length
-        let effect = getAll(obj)[0].values.length - ((yes + no) / 2)
+        let popular = getPopular(property, obj)
+        if (!popular) continue;
+        let people = {...obj, [property]: obj[property].concat(popular)}
+        let yes = getAll(people)[0]?.values.length ?? 0
+        people = {...obj, [property]: obj[property].concat("NOT " + popular)}
+        let no = getAll(people)[0]?.values.length ?? 0
+        let effect = (getAll(obj)[0]?.values.length ?? 0) - ((yes + no) / 2)
+        effect = effect / (1 + obj[property].length)
 
         if (effect > highEffect) {
             highEffect = effect
@@ -55,15 +58,16 @@ async function getQuestion() {
         for(let pIndex = 0; pIndex < questionList.length; pIndex++) {
             let person = questionList[pIndex];
             for(let qIndex = 0;qIndex < person.questions.length; qIndex++) {
-                question.innerHTML = questionList.questions[qIndex];
+                question.innerHTML = person.questions[qIndex];
                 let answer = await waitForClick();
-                if(answer==="yes"){
-                    person.yes+=1
-                    if(qIndex === person.questions.length-1){
-                        question.innerHTML = `you're thinking of ${person.person}!`}
+                if(answer==="yes") {
+                    person.yes += 1
+                    if (qIndex === person.questions.length - 1) {
+                        question.innerHTML = `you're thinking of ${person.person}!`
                         yesButton.style.display = "none";
                         noButton.style.display = "none"
                         return "found"
+                    }
                 }
             }
         }
@@ -92,10 +96,10 @@ async function generate() {
 
     await special()
     let property = await getQuestion();
-    let value = getPopular(property, obj)
-    if(property === "complete"){question.innerHTML = "you're thinking of" + getAll(obj)[0].values[0][0] + "!"}
+    if(property === "complete"){question.innerHTML = "you're thinking of " + getAll(obj)[0].values[0][0] + "!"}
     else if(property === "none") question.innerHTML = "sorry, I couldn't guess your character :("
     else if(property in statements){
+        let value = getPopular(property, obj)
         question.innerHTML = statements[property] + value + "?"
         const answer = await waitForClick();
         if (answer === "yes") { obj[property].push(value) }
