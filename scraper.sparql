@@ -1,0 +1,94 @@
+# this query was run on wikidata hosted by QLever to avoid standard wikidata timeouts since this is a large query
+
+SELECT DISTINCT ?personLabel ?personDescription ?sexLabel
+       ?occupationLabel ?citizenshipLabel
+       ?sitelinks ?alive ?special
+       ?employerLabel ?politicalParty ?followers
+WHERE {
+    {
+        SELECT ?person ?sitelinks (MAX(?f) AS ?followers)
+        WHERE {
+            ?person wdt:P8687 ?f .
+            ?person wdt:P31 wd:Q5 ;
+                    wdt:P27 [] ; wdt:P21 [] ; wdt:P106 [] ;
+                    wikibase:sitelinks ?sitelinks .
+            FILTER(?f > 500000 && ?sitelinks > 14)
+        }
+        GROUP BY ?person ?sitelinks
+    }
+    UNION
+    {
+        ?person wdt:P31 wd:Q5 ;
+                wdt:P27 [] ; wdt:P21 [] ; wdt:P106 [] ;
+                wikibase:sitelinks ?sitelinks .
+        FILTER(?sitelinks > 34)
+        FILTER NOT EXISTS { ?person wdt:P8687 [] }
+        BIND(0 AS ?followers)
+    }
+
+    {
+        SELECT ?person (GROUP_CONCAT(?occLabel; SEPARATOR=",") AS ?occupationLabel)
+        WHERE {
+            ?person wdt:P106 ?occ .
+            ?occ rdfs:label ?occLabel .
+            FILTER(LANG(?occLabel) = "en")
+        }
+        GROUP BY ?person
+    }
+
+    {
+        SELECT ?person (GROUP_CONCAT(?citLabel; SEPARATOR=",") AS ?citizenshipLabel)
+        WHERE {
+            ?person wdt:P27 ?cit .
+            ?cit rdfs:label ?citLabel .
+            FILTER(LANG(?citLabel) = "en")
+        }
+        GROUP BY ?person
+    }
+
+    OPTIONAL {
+        SELECT ?person (GROUP_CONCAT(?empLabel; SEPARATOR=",") AS ?employerLabel)
+        WHERE {
+            ?person wdt:P108 ?emp .
+            ?emp rdfs:label ?empLabel .
+            FILTER(LANG(?empLabel) = "en")
+        }
+        GROUP BY ?person
+    }
+
+    OPTIONAL {
+        SELECT ?person (SAMPLE(?ppLabel) AS ?politicalParty)
+        WHERE {
+            ?person wdt:P102 ?pp .
+            ?pp rdfs:label ?ppLabel .
+            FILTER(LANG(?ppLabel) = "en")
+        }
+        GROUP BY ?person
+    }
+
+    {
+        SELECT ?person (SAMPLE(?sexLbl) AS ?sexLabel)
+        WHERE {
+            ?person wdt:P21 ?sex .
+            ?sex rdfs:label ?sexLbl .
+            FILTER(LANG(?sexLbl) = "en")
+        }
+        GROUP BY ?person
+    }
+
+    OPTIONAL { ?person wdt:P570 ?dateDeath . }
+    BIND(IF(bound(?dateDeath), "deceased", "alive") AS ?alive)
+
+    BIND(
+        IF(bound(?politicalParty) && ?politicalParty != "", "politician",
+            IF(bound(?employerLabel) && ?employerLabel != "", "employed", "no"))
+        AS ?special)
+
+    ?person rdfs:label ?personLabel .
+    FILTER(LANG(?personLabel) = "en")
+
+    OPTIONAL {
+        ?person schema:description ?personDescription .
+        FILTER(LANG(?personDescription) = "en")
+    }
+}
