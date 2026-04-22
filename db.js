@@ -15,6 +15,7 @@ import nlp from 'https://esm.sh/compromise';
 
 function match(name) {
     let item = getAll(obj)[0].values.find(o => o[0] === name);
+    if (!item) return 0;
     let totalNo = 0;
     let no = 0;
 
@@ -23,8 +24,10 @@ function match(name) {
         totalNo += array.filter(o => obj[property].includes(o)).length;
         no += obj[property].length;
     }
+    if (no === 0) return 0;
     return totalNo / no;
 }
+
 nlp.addWords({
     'prime minister':    'Title',
     'vice president':    'Title',
@@ -71,7 +74,6 @@ export function getAll(o) {
     }
     let result = db.exec(query);
     if (!result || result.length === 0) return [];
-    console.log(result);
 
     let rows = result[0].values
 
@@ -87,9 +89,11 @@ export function getAll(o) {
     }
     return result;
 }
-function bayesian(M, S, R){          // M: global P avg, C: weight, S: no of occurrences, R: avg P of particular
+
+function bayesian(M, S, R){          // M: global P median, 250: prior weight, S: no of occurrences, R: avg P of particular
     return ((250*M)+(S*R))/(250+S)
 }
+
 // getAll() returns columns and values separately, values is an array, not key-value pairs
 export function getPopular(property, obj){
     let people = getAll(obj)[0].values
@@ -103,7 +107,7 @@ export function getPopular(property, obj){
 
     let unique = []
     raw.forEach((item) => {
-        if (unique.includes(item.name)){}else{
+        if (!unique.includes(item.name)) {
             unique.push(item.name)
         }
     })
@@ -118,8 +122,11 @@ export function getPopular(property, obj){
             "R": totalP / filtered.length
         });
     }
+
+    // M is the median of R's, so outlier countries don't pull the prior up
     const sortedR = aggregate.map(a => a.R).sort((a, b) => a - b);
     const M = sortedR[Math.floor(sortedR.length / 2)];
+
     for (const entry of aggregate) {
         entry.B = bayesian(M, entry.S, entry.R);
     }
@@ -127,41 +134,15 @@ export function getPopular(property, obj){
     aggregate.sort((a, b) => b.B - a.B)
 
     let result = ""
-    for (let i=0; i<aggregate.length; i++){
-        if(obj[property].includes(aggregate[i].name) ||
-            obj[property].includes("NOT " + aggregate[i].name)){}
-        else{result = aggregate[i].name;
-            break;}
+    for (let i = 0; i < aggregate.length; i++){
+        if (obj[property].includes(aggregate[i].name) ||
+            obj[property].includes("NOT " + aggregate[i].name)) {
+        } else {
+            result = aggregate[i].name;
+            break;
+        }
     }
     return result;
-}
-
-export function getDes(descList){
-    let list = []
-    for (const person of descList){
-        let desc = nlp(person.desc)
-        desc.match('#Demonym').remove()   // strip nationality adjectives
-        let organisation = desc.organizations().out('array')
-        let nouns = desc.nouns().out('array').filter(phrase => {
-            let words = phrase.split(' ');
-            return !words.some(word =>
-                obj.occupationLabel.includes(word) ||
-                obj.occupationLabel.includes(`NOT ${word}`)
-            );
-        }) // removes occupations already filtered, leaves titles and uncovered occupations
-        list.push({'person':person.person, 'organisation':organisation,'nouns':nouns, 'match':match(person.person)})
-    }
-    list.sort((a, b) => b.match - a.match)
-    for(const item of list){delete item.match}
-
-    let questions = []
-    for (const item of list){
-        let questionsList = {'person':item.person, 'questions':[], 'yes': 0}
-        for (const org of item.organisation){questionsList['questions'].push(`is your character associated with ${org}`)}
-        for (const noun of item.nouns){questionsList['questions'].push(`is your character associated with ${noun}`)}
-        questions.push(questionsList);
-    }
-    return questions
 }
 
 export function getDesc(descList){
@@ -196,7 +177,7 @@ export function getDesc(descList){
                 QList.push(q)
             }
             let index = QList.indexOf(q)
-            entry.indices.push(index)
+            if (!entry.indices.includes(index)) entry.indices.push(index)
         }
 
         for (const org of organisations){
@@ -205,14 +186,16 @@ export function getDesc(descList){
                 QList.push(q)
             }
             let index = QList.indexOf(q)
-            entry.indices.push(index)
+            if (!entry.indices.includes(index)) entry.indices.push(index)
         }
+
         PList.push(entry)
     }
 
     for (const person of descList){
         if (!person.occupations) continue
         let entry = PList.find(p => p.name === person.person)
+        if (!entry) continue
         for (let i = 0; i < QList.length; i++){
             let phrase = QList[i].replace("is your character a ", "").replace("?", "")
             if (person.occupations.includes(phrase)){
