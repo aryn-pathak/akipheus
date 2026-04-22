@@ -88,7 +88,7 @@ export function getAll(o) {
     return result;
 }
 function bayesian(M, S, R){          // M: global P avg, C: weight, S: no of occurrences, R: avg P of particular
-    return ((20*M)+(S*R))/(20+S)
+    return ((250*M)+(S*R))/(250+S)
 }
 // getAll() returns columns and values separately, values is an array, not key-value pairs
 export function getPopular(property, obj){
@@ -118,12 +118,13 @@ export function getPopular(property, obj){
             "R": totalP / filtered.length
         });
     }
-    const M = aggregate.reduce((acc, o) => acc + o.R, 0) / aggregate.length;
+    const sortedR = aggregate.map(a => a.R).sort((a, b) => a - b);
+    const M = sortedR[Math.floor(sortedR.length / 2)];
     for (const entry of aggregate) {
         entry.B = bayesian(M, entry.S, entry.R);
     }
 
-    aggregate.sort((a, b)=>b.B-a.B)
+    aggregate.sort((a, b) => b.B - a.B)
 
     let result = ""
     for (let i=0; i<aggregate.length; i++){
@@ -135,11 +136,12 @@ export function getPopular(property, obj){
     return result;
 }
 
-export function getDesc(descList){
+export function getDes(descList){
     let list = []
     for (const person of descList){
         let desc = nlp(person.desc)
         desc.match('#Demonym').remove()   // strip nationality adjectives
+        let organisation = desc.organizations().out('array')
         let nouns = desc.nouns().out('array').filter(phrase => {
             let words = phrase.split(' ');
             return !words.some(word =>
@@ -164,7 +166,7 @@ export function getDesc(descList){
 
 export function getDesc(descList){
     let QList = []
-    let PIndices = {}
+    let PList = []
 
     for (const person of descList){
         let desc = nlp(person.desc)
@@ -186,7 +188,7 @@ export function getDesc(descList){
             );
         })
 
-        PIndices[person.person] = []
+        let entry = { name: person.person, indices: [], yes: 0, match: match(person.person) }
 
         for (const noun of nouns){
             let q = `is your character a ${noun}?`
@@ -194,7 +196,7 @@ export function getDesc(descList){
                 QList.push(q)
             }
             let index = QList.indexOf(q)
-            PIndices[person.person].push(index)
+            entry.indices.push(index)
         }
 
         for (const org of organisations){
@@ -203,20 +205,23 @@ export function getDesc(descList){
                 QList.push(q)
             }
             let index = QList.indexOf(q)
-            PIndices[person.person].push(index)
+            entry.indices.push(index)
         }
+        PList.push(entry)
     }
 
     for (const person of descList){
+        if (!person.occupations) continue
+        let entry = PList.find(p => p.name === person.person)
         for (let i = 0; i < QList.length; i++){
             let phrase = QList[i].replace("is your character a ", "").replace("?", "")
             if (person.occupations.includes(phrase)){
-                if (!PIndices[person.person].includes(i)){
-                    PIndices[person.person].push(i)
+                if (!entry.indices.includes(i)){
+                    entry.indices.push(i)
                 }
             }
         }
     }
 
-    return { QList, PIndices }
+    return { QList, PList }
 }
