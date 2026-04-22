@@ -13,30 +13,17 @@ df = df.drop_duplicates(subset=['occupationLabel', 'citizenshipLabel', 'sexLabel
 
 grouped = df.groupby('personLabel').agg({
     'personDescription': 'first',
-    'citizenshipLabel': df['occupationLabel'].apply(
-        lambda x: json.dumps(x.split(','))
-    ),
-    'sexLabel': df['occupationLabel'].apply(
-        lambda x: json.dumps(x.split(','))
-    ),
-    'occupationLabel': df['occupationLabel'].apply(
-        lambda x: json.dumps(x.split(','))
-    ),
-    'special': df['occupationLabel'].apply(
-        lambda x: json.dumps(x.split(','))
-    ),
-    'political party': df['occupationLabel'].apply(
-        lambda x: json.dumps(x.split(','))
-    ),
-    'employer': lambda x: df['occupationLabel'].apply(
-        lambda x: json.dumps(x.split(','))
-    ),
-    'alive': lambda x: df['occupationLabel'].apply(
-        lambda x: json.dumps(x.split(','))
-    ),
-    'followers':'first',
-    'sitelinks': 'first',
-    'P': 'first'
+
+    'citizenshipLabel':  lambda x: json.dumps(list({v.strip() for s in x.dropna() for v in s.split(',')})),
+    'sexLabel':          lambda x: json.dumps(list({v.strip() for s in x.dropna() for v in s.split(',')})),
+    'occupationLabel':   lambda x: json.dumps(list({v.strip() for s in x.dropna() for v in s.split(',')})),
+    'special':           lambda x: json.dumps(list({v.strip() for s in x.dropna() for v in s.split(',')})),
+    'politicalParty':   lambda x: json.dumps(list({v.strip() for s in x.dropna() for v in s.split(',')})),
+    'employer':          lambda x: json.dumps(list({v.strip() for s in x.dropna() for v in s.split(',')})),
+    'alive':             lambda x: json.dumps(list({v.strip() for s in x.dropna() for v in s.split(',')})),
+
+    'followers': 'first',
+    'sitelinks':  'first',
 }).reset_index()
 
 conditions = [
