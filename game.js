@@ -54,26 +54,31 @@ async function getQuestion() {
         for (const person of getAll(obj)[0].values) {
             descList.push({'person': person[0], 'desc': person[1], 'occupations': person[3], 'P': person[7]})
         }
-        let questionList = getDesc(descList)
-        for(let pIndex = 0; pIndex < questionList.length; pIndex++) {
-            let person = questionList[pIndex];
-            for(let qIndex = 0;qIndex < person.questions.length; qIndex++) {
-                question.innerHTML = person.questions[qIndex];
-                let answer = await waitForClick();
-                if(answer==="yes") {
-                    person.yes += 1
-                    if (qIndex === person.questions.length - 1) {
-                        question.innerHTML = `you're thinking of ${person.person}!`
-                        yesButton.style.display = "none";
-                        noButton.style.display = "none"
-                        return "found"
-                    }
-                }
+        let {QList, PList} = getDesc(descList)
+        for (let i = 0; i < QList.length; i++) {
+            question.innerHTML = QList[i]
+            let answer = await waitForClick();
+            if(answer==="yes") {
+                let found = PList.filter(p => p.indices.includes(i))
+                for (let founds of found) {founds.yes += 1}
             }
+            if (answer === "no") {
+                PList = PList.filter(p => !p.indices.includes(i))
+            }
+            let winner
+            if (PList.length === 0) {
+                question.innerHTML = "sorry, I couldn't guess your character :("
+                return "none"
+            } else if (PList.length === 1) {
+                winner = PList[0]
+            } else {
+                winner = PList.reduce((a, b) => a.yes > b.yes ? a : b)
+            }
+            question.innerHTML = `you're thinking of ${winner.name}!`
+            yesButton.style.display = "none"
+            noButton.style.display = "none"
+            return "done"
         }
-        let bestMatch = questionList.reduce((a, b) => (a.yes > b.yes) ? a : b);
-        question.innerHTML = `you're thinking of ${bestMatch.person}!`;
-        return ""
     }else{return effectProperty}
 }
 async function special(){
