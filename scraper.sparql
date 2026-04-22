@@ -82,12 +82,19 @@ SELECT DISTINCT ?personLabel ?personDescription ?sexLabel
     }
 }
 ORDER BY 
-  IF((CONTAINS(LCASE(?personDescription), "actor") || 
-      CONTAINS(LCASE(?personDescription), "actress"))        && ?sitelinks >= 60, 1,
-  IF((CONTAINS(LCASE(?personDescription), "singer") || 
-      CONTAINS(LCASE(?personDescription), "rapper"))         && ?sitelinks >= 60, 2,
-  IF((CONTAINS(LCASE(?personDescription), "president") || 
-      CONTAINS(LCASE(?personDescription), "prime minister")) && ?sitelinks >= 60, 3,
-  IF(CONTAINS(LCASE(?personDescription), "football")         && ?sitelinks >= 60, 4,
-                                                                                  99))))
-DESC(?followers + ?sitelinks * 10000)                                           
+  IF((CONTAINS(LCASE(?personDescription), "actor")                      ||
+      CONTAINS(LCASE(?personDescription), "actress")                    ||
+      CONTAINS(LCASE(?occupationLabel),   "actor")                      ||
+      CONTAINS(LCASE(?occupationLabel),   "actress"))                    && ?sitelinks >= 80, 1,
+  IF((CONTAINS(LCASE(?personDescription), "singer")                     ||
+      CONTAINS(LCASE(?personDescription), "rapper")                     ||
+      CONTAINS(LCASE(?occupationLabel),   "singer")                     ||
+      CONTAINS(LCASE(?occupationLabel),   "rapper"))                     && ?sitelinks >= 50, 2,
+  IF((CONTAINS(LCASE(?personDescription), "president")                  ||
+      CONTAINS(LCASE(?personDescription), "prime minister")             ||
+      CONTAINS(LCASE(?occupationLabel),   "president")                  ||
+      CONTAINS(LCASE(?occupationLabel),   "prime minister"))             && ?sitelinks >= 60, 3,
+  IF((CONTAINS(LCASE(?personDescription), "chief executive officer")    ||
+      CONTAINS(LCASE(?occupationLabel),   "chief executive officer"))    && ?sitelinks >= 60, 4,
+                                                                                               99))))
+DESC(?followers + ?sitelinks * 10000)
