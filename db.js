@@ -161,3 +161,62 @@ export function getDesc(descList){
     }
     return questions
 }
+
+export function getDesc(descList){
+    let QList = []
+    let PIndices = {}
+
+    for (const person of descList){
+        let desc = nlp(person.desc)
+        desc.match('#Demonym').remove()
+
+        let nouns = desc.nouns().out('array').filter(phrase => {
+            let words = phrase.split(' ');
+            return !words.some(word =>
+                obj.occupationLabel.includes(word) ||
+                obj.occupationLabel.includes(`NOT ${word}`)
+            );
+        })
+
+        let organisations = desc.organizations().out('array').filter(phrase => {
+            let words = phrase.split(' ');
+            return !words.some(word =>
+                obj.employer.includes(word) ||
+                obj.employer.includes(`NOT ${word}`)
+            );
+        })
+
+        PIndices[person.person] = []
+
+        for (const noun of nouns){
+            let q = `is your character a ${noun}?`
+            if (!QList.includes(q)){
+                QList.push(q)
+            }
+            let index = QList.indexOf(q)
+            PIndices[person.person].push(index)
+        }
+
+        for (const org of organisations){
+            let q = `is your character associated with ${org}?`
+            if (!QList.includes(q)){
+                QList.push(q)
+            }
+            let index = QList.indexOf(q)
+            PIndices[person.person].push(index)
+        }
+    }
+
+    for (const person of descList){
+        for (let i = 0; i < QList.length; i++){
+            let phrase = QList[i].replace("is your character a ", "").replace("?", "")
+            if (person.occupations.includes(phrase)){
+                if (!PIndices[person.person].includes(i)){
+                    PIndices[person.person].push(i)
+                }
+            }
+        }
+    }
+
+    return { QList, PIndices }
+}
