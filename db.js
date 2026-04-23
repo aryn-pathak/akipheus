@@ -55,7 +55,7 @@ export async function init(){
         locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.12.0/${file}`
     });
 
-    const response = await fetch("humans.db")
+    const response = await fetch("humansClean.db")
     const buffer = await response.arrayBuffer();
     db = new SQL.Database(new Uint8Array(buffer));
     console.log("initialised");
@@ -64,7 +64,7 @@ export async function init(){
 // obj is an object expected to be in format { citizenshipLabel : ["India", "NOT United States"], occupationLabel : ["actor", "NOT scientist"] ...} and anything with NOT is something answered "no" to.
 
 export function getAll(o) {
-    let query = "SELECT * FROM humansFlat WHERE sitelinks > 1"
+    let query = "SELECT * FROM humans WHERE sitelinks > 1"
     for (let key of Object.keys(o)) {
         for (let filter of o[key]) {
             if (filter.startsWith("NOT "))
