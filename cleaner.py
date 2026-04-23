@@ -1,5 +1,7 @@
 import json
 import sqlite3
+import time
+
 import outlines
 import mlx_lm
 import pandas as pd
@@ -9,7 +11,7 @@ con = sqlite3.connect("humans.db")
 df = pd.read_sql("SELECT * FROM humansFlat", con)
 records = df.to_dict(orient='records')
 
-model_raw, tokenizer = mlx_lm.load("mlx-community/Phi-4-mini-instruct-8bit")
+model_raw, tokenizer = mlx_lm.load("mlx-community/Qwen2.5-1.5B-Instruct-4bit")
 model = outlines.from_mlxlm(model_raw, tokenizer)
 
 sampler = make_sampler(temp=0.2)
@@ -19,12 +21,18 @@ def generateprompt(description, occupation, name):
     messages = [
         {
             "role": "system",
-            "content": "you are a precise data extractor who can understand context well."
+            "content": '''
+            Strict instructions:
+            Classify the given person into a field of work based on their description and occupations.
+            Your response must strictly be an array like: ["field"].
+            Prefer broad fields like science, sports, politics, film, music, etc.
+            AVOID specific fields like microbiology, central government, rap, etc.
+            Output only a single item array without any explanation or additional text.
+            '''
         },
         {
             "role": "user",
-            "content": """
-            You are given a name, description, and list of occupations of a person. Give one most relevant field of work for that person considering their description and occupation.
+            "content": """  
             name: Narendra Modi
             description: Prime Minister of India since 2014
             occupations: ["politician", "writer", "social worker", "bibliographer"]
@@ -37,7 +45,6 @@ def generateprompt(description, occupation, name):
         {
             "role": "user",
             "content": """
-        You are given a name, description, and list of occupations of a person. Give one most relevant field of work for that person considering their description and occupation.
         name: Fernando Alonso 
         description: Spanish racing driver
         occupations: ["Formula One Driver", "vegetarian"]
@@ -45,12 +52,23 @@ def generateprompt(description, occupation, name):
         },
         {
             "role": "assistant",
-            "content": '["racing"]'
+            "content": '["sports"]'
+        },
+        {
+            "role": "user",
+            "content": (
+                'name: Taylor Swift'
+                'description: American singer-songwriter'
+                'occupations: ["singer", "songwriter", "actor", "record producer", "businessperson"]'
+            )
+        },
+        {
+            "role": "assistant",
+            "content": '["music"]'
         },
         {
             "role": "user",
             "content": f"""
-        You are given a name, description, and list of occupations of a person. Give one most relevant field of work for that person considering their description and occupation.
         name: {name}
         description: {description}
         occupations: {occupation}
@@ -71,6 +89,7 @@ def AIclean(descriptionList, occupationList, nameList):
         promptBatch.append(generateprompt(description, occupation, name))
 
     result = model.batch(promptBatch)
+    result = [r.strip() for r in result]
     print(result)
     return result
 
@@ -86,12 +105,15 @@ for item in records:
     nameList.append(item['personLabel'])
     batch.append(item)
 
-    if len(batch) == 30:
+    if len(batch) == 400:
+        start = time.perf_counter()
         result = AIclean(descriptionList, occupationList, nameList)
         for x in range(len(result)):
             batch[x]["field"] = result[x]
             print(f'batch {x} : {batch[x]}')
-            humansClean.extend(batch)
+            elapsed = time.perf_counter() - start
+            print(f"That took {elapsed:.2f} seconds")
+        humansClean.extend(batch)
 
         descriptionList = []
         occupationList = []
@@ -103,7 +125,7 @@ if descriptionList:
     result = AIclean(descriptionList, occupationList, nameList)
     for x in range(len(result)):
         batch[x]["field"] = result[x]
-        humansClean.extend(batch)
+    humansClean.extend(batch)
 
 with (open('humansClean.json', 'w') as humans):
     json.dump(humansClean, humans, indent=4)
@@ -111,4 +133,4 @@ with (open('humansClean.json', 'w') as humans):
 df = pd.read_json("humansClean.json")
 
 con = sqlite3.connect("humansClean.db")
-df.to_sql("humansClean", con, if_exists='replace', index=False)
+df.to_sql("humans", con, if_exists='replace', index=False)
