@@ -111,6 +111,17 @@ async function getQuestion() {
             for (const name in finalPeople) {
                 finalPeople[name] = finalPeople[name].filter(item => counts.get(item) === 1);
             }
+            for (const [i, [name, occupations]] of Object.entries(finalPeople).entries()) {
+                question.innerHTML = `is your character a ${occupations[0]}`
+                let answer = await waitForClick();
+                if (answer === "yes") {
+                    winner = name
+                    break
+                }
+                if (i === Object.keys(finalPeople).length-1) {
+                    question.innerHTML = "sorry, I couldn't guess your character :("
+                }
+            }
         }
         question.innerHTML = `you're thinking of ${winner.name}!`
         yesButton.style.display = "none"
