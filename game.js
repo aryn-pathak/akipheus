@@ -1,11 +1,11 @@
-import {getAll, getPopular, getDesc, init, obj} from "./db.js";
+import {getAll, getDesc, getPopular, init, obj} from "./db.js";
 
 const yesButton = document.getElementById("yes")
 const noButton = document.getElementById("no")
 const start = document.getElementById("start")
 const question = document.getElementById("question")
 
-let statements = {          // statements for framing questions about particular characteristics
+let statements = {
     "sexLabel":"is your character a ",
     "citizenshipLabel":"is your character from ",
     "occupationLabel":"is your character a ",
@@ -14,7 +14,7 @@ let statements = {          // statements for framing questions about particular
     "employer":"is your character employed by ",
     "alive":"is your character ",
 }
-let properties = ["alive", "sexLabel", "citizenshipLabel", "occupationLabel", "field"]; // field
+let properties = ["alive", "sexLabel", "citizenshipLabel", "occupationLabel", "field"];
 
 function waitForClick() {
     return new Promise((resolve) => {
@@ -52,11 +52,20 @@ async function getQuestion() {
     } else if (highEffect <= 5) {
         let descList = []
         for (const person of getAll(obj)[0].values) {
-            descList.push({'person': person[0], 'desc': person[1], 'occupations': person[3], 'P': person[7]})
+            descList.push({'person': person[0], 'desc': person[1], 'occupations': person[4], 'P': person[7], 'sitelinks': person[10]})
         }
         let {QList, PList} = getDesc(descList)
-        let counts = QList.map((_, i) => PList.filter(p => p.indices.includes(i)).length)
-        let order = QList.map((_, i) => i).sort((a, b) => counts[b] - counts[a])
+
+        let peopleBySitelinks = [...PList].sort((a, b) => (b.sitelinks ?? 0) - (a.sitelinks ?? 0))
+        let order = []
+        for (const p of peopleBySitelinks) {
+            for (const idx of p.indices) {
+                if (!order.includes(idx)) order.push(idx)
+            }
+        }
+
+        let winner
+        let earlyWinner = null
 
         for (const i of order) {
             if (PList.length <= 1) break
@@ -66,13 +75,20 @@ async function getQuestion() {
                 for (const p of PList) {
                     if (p.indices.includes(i)) p.yes += 1
                 }
+                let fullYes = PList.find(p => p.indices.length > 0 && p.yes === p.indices.length)
+                if (fullYes) {
+                    earlyWinner = fullYes
+                    break
+                }
             }
             if (answer === "no") {
                 PList = PList.filter(p => !p.indices.includes(i))
             }
         }
-        let winner
-        if (PList.length === 0) {
+
+        if (earlyWinner) {
+            winner = earlyWinner
+        } else if (PList.length === 0) {
             question.innerHTML = "sorry, I couldn't guess your character :("
             yesButton.style.display = "none"
             noButton.style.display = "none"
@@ -80,10 +96,21 @@ async function getQuestion() {
         } else if (PList.length === 1) {
             winner = PList[0]
         } else {
-            winner = PList.reduce((a, b) => {
-                if (a.yes !== b.yes) return a.yes > b.yes ? a : b
-                return a.match > b.match ? a : b
-            })
+            let finalPeople = {}
+            for (let p of PList) {
+                finalPeople[p.name] = descList.find(d => d.person === p.name).occupations
+            }
+
+            const counts = new Map();
+            for (const arr of Object.values(finalPeople)) {
+                for (const item of new Set(arr)) {
+                    counts.set(item, (counts.get(item) || 0) + 1);
+                }
+            }
+
+            for (const name in finalPeople) {
+                finalPeople[name] = finalPeople[name].filter(item => counts.get(item) === 1);
+            }
         }
         question.innerHTML = `you're thinking of ${winner.name}!`
         yesButton.style.display = "none"
