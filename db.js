@@ -8,6 +8,7 @@ const indices = {
     'politicalParty':6,
     'employer':7,
     'alive':8,
+    'sitelinks':10,
     'P':11,
     'field':12
 }
@@ -47,7 +48,30 @@ nlp.addWords({
     'racing driver': 'Title',
     'soccer player': 'Title',
     'association football player': 'Title',
-}) // list of common multi-word titles
+    'rapper': 'Title',
+})
+
+const keywords = [
+    // music
+    "rapper", "singer", "songwriter", "musician", "composer", "producer",
+    "guitarist", "drummer", "pianist", "violinist", "conductor", "dj",
+    // sports
+    "footballer", "boxer", "wrestler", "swimmer", "cyclist", "skater",
+    "gymnast", "golfer", "cricketer", "racing driver", "soccer player",
+    // film/tv
+    "actor", "actress", "director", "screenwriter", "comedian", "filmmaker",
+    // writing
+    "novelist", "poet", "journalist", "playwright", "essayist", "author",
+    // visual
+    "painter", "sculptor", "photographer", "illustrator", "architect",
+    // science/academia
+    "physicist", "chemist", "biologist", "mathematician", "philosopher",
+    "historian", "economist", "psychologist",
+    // business/politics
+    "entrepreneur", "investor", "activist", "diplomat", "lawyer", "judge",
+    // misc
+    "model", "chef", "astronaut", "explorer", "inventor",
+]
 
 export async function init(){
     console.log("initializing");
@@ -60,8 +84,6 @@ export async function init(){
     db = new SQL.Database(new Uint8Array(buffer));
     console.log("initialised");
 }
-
-// obj is an object expected to be in format { citizenshipLabel : ["India", "NOT United States"], occupationLabel : ["actor", "NOT scientist"] ...} and anything with NOT is something answered "no" to.
 
 export function getAll(o) {
     let query = "SELECT * FROM humans WHERE sitelinks > 1"
@@ -90,11 +112,10 @@ export function getAll(o) {
     return result;
 }
 
-function bayesian(M, S, R){          // M: global P median, 250: prior weight, S: no of occurrences, R: avg P of particular
+function bayesian(M, S, R){
     return ((250*M)+(S*R))/(250+S)
 }
 
-// getAll() returns columns and values separately, values is an array, not key-value pairs
 export function getPopular(property, obj){
     let people = getAll(obj)[0].values
     let raw = []
@@ -123,7 +144,6 @@ export function getPopular(property, obj){
         });
     }
 
-    // M is the median of R's, so outlier countries don't pull the prior up
     const sortedR = aggregate.map(a => a.R).sort((a, b) => a - b);
     const M = sortedR[Math.floor(sortedR.length / 2)];
 
@@ -145,43 +165,23 @@ export function getPopular(property, obj){
     return result;
 }
 
-export function getDesc(descList){
+export function getDesc(descList) {
     let QList = []
     let PList = []
 
-    for (const person of descList){
-        let desc = nlp(person.desc)
-        desc.match('#Demonym').remove()
-
-        let nouns = desc.nouns().out('array').filter(phrase => {
-            let words = phrase.split(' ');
-            return !words.some(word =>
-                obj.occupationLabel.includes(word) ||
-                obj.occupationLabel.includes(`NOT ${word}`)
-            );
+    for (const person of descList) {
+        let desc = person.desc.toLowerCase()
+        let matching = keywords.filter(kw => {
+            let re = new RegExp(`\\b${kw}\\b`, 'i')
+            if (!re.test(desc)) return false
+            if (obj.occupationLabel.includes(kw)) return false
+            if (obj.occupationLabel.includes(`NOT ${kw}`)) return false
+            return true
         })
+        let entry = {name: person.person, indices: [], yes: 0, sitelinks: (person.sitelinks ?? 0) * (1 + match(person.person))}
 
-        let organisations = desc.organizations().out('array').filter(phrase => {
-            let words = phrase.split(' ');
-            return !words.some(word =>
-                obj.employer.includes(word) ||
-                obj.employer.includes(`NOT ${word}`)
-            );
-        })
-
-        let entry = { name: person.person, indices: [], yes: 0, match: match(person.person) }
-
-        for (const noun of nouns){
-            let q = `is your character a ${noun}?`
-            if (!QList.includes(q)){
-                QList.push(q)
-            }
-            let index = QList.indexOf(q)
-            if (!entry.indices.includes(index)) entry.indices.push(index)
-        }
-
-        for (const org of organisations){
-            let q = `is your character associated with ${org}?`
+        for (const kw of matching){
+            let q = `is your character a ${kw}?`
             if (!QList.includes(q)){
                 QList.push(q)
             }
