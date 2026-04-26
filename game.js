@@ -1,4 +1,4 @@
-import {getAll, getDesc, getPopular, init, obj} from "./db.js";
+import {getAll, getPopular, init, obj} from "./db.js";
 
 const yesButton = document.getElementById("yes")
 const noButton = document.getElementById("no")
@@ -49,81 +49,48 @@ async function getQuestion() {
         return "complete"
     } else if (getAll(obj)[0].values.length === 0) {
         return "none"
-    } else if (highEffect <= 5) {
-        let descList = []
-        for (const person of getAll(obj)[0].values) {
-            descList.push({'person': person[0], 'desc': person[1], 'occupations': person[4], 'P': person[7], 'sitelinks': person[10]})
-        }
-        let {QList, PList} = getDesc(descList)
+    } else if (highEffect <= 3) {
+        let people = getAll(obj)[0].values
 
-        let peopleBySitelinks = [...PList].sort((a, b) => (b.sitelinks ?? 0) - (a.sitelinks ?? 0))
-        let order = []
-        for (const p of peopleBySitelinks) {
-            for (const idx of p.indices) {
-                if (!order.includes(idx)) order.push(idx)
+        let finalPeople = {}
+        for (let person of people) {
+            finalPeople[person[0]] = person[4]
+        }
+
+        const counts = new Map()
+        for (const arr of Object.values(finalPeople)) {
+            for (const item of new Set(arr)) {
+                counts.set(item, (counts.get(item) || 0) + 1)
             }
         }
 
-        let winner
-        let earlyWinner = null
+        for (const name in finalPeople) {
+            finalPeople[name] = finalPeople[name].filter(item => counts.get(item) === 1)
+        }
 
-        for (const i of order) {
-            if (PList.length <= 1) break
-            question.innerHTML = QList[i]
-            let answer = await waitForClick();
+        let names = Object.keys(finalPeople).sort((a, b) => {
+            let sa = people.find(p => p[0] === a)[10] ?? 0
+            let sb = people.find(p => p[0] === b)[10] ?? 0
+            return sb - sa
+        })
+
+        let winner = null
+        for (const name of names) {
+            let occupations = finalPeople[name]
+            if (occupations.length === 0) continue
+            question.innerHTML = `is your character a ${occupations[0]}?`
+            let answer = await waitForClick()
             if (answer === "yes") {
-                for (const p of PList) {
-                    if (p.indices.includes(i)) p.yes += 1
-                }
-                let fullYes = PList.find(p => p.indices.length > 0 && p.yes === p.indices.length)
-                if (fullYes) {
-                    earlyWinner = fullYes
-                    break
-                }
-            }
-            if (answer === "no") {
-                PList = PList.filter(p => !p.indices.includes(i))
+                winner = name
+                break
             }
         }
 
-        if (earlyWinner) {
-            winner = earlyWinner
-        } else if (PList.length === 0) {
-            question.innerHTML = "sorry, I couldn't guess your character :("
-            yesButton.style.display = "none"
-            noButton.style.display = "none"
-            return "done"
-        } else if (PList.length === 1) {
-            winner = PList[0]
+        if (winner) {
+            question.innerHTML = `you're thinking of ${winner}!`
         } else {
-            let finalPeople = {}
-            for (let p of PList) {
-                finalPeople[p.name] = descList.find(d => d.person === p.name).occupations
-            }
-
-            const counts = new Map();
-            for (const arr of Object.values(finalPeople)) {
-                for (const item of new Set(arr)) {
-                    counts.set(item, (counts.get(item) || 0) + 1);
-                }
-            }
-
-            for (const name in finalPeople) {
-                finalPeople[name] = finalPeople[name].filter(item => counts.get(item) === 1);
-            }
-            for (const [i, [name, occupations]] of Object.entries(finalPeople).entries()) {
-                question.innerHTML = `is your character a ${occupations[0]}`
-                let answer = await waitForClick();
-                if (answer === "yes") {
-                    winner = name
-                    break
-                }
-                if (i === Object.keys(finalPeople).length-1) {
-                    question.innerHTML = "sorry, I couldn't guess your character :("
-                }
-            }
+            question.innerHTML = "sorry, I couldn't guess your character :("
         }
-        question.innerHTML = `you're thinking of ${winner.name}!`
         yesButton.style.display = "none"
         noButton.style.display = "none"
         return "done"

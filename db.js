@@ -12,66 +12,6 @@ const indices = {
     'P':11,
     'field':12
 }
-import nlp from 'https://esm.sh/compromise';
-
-function match(name) {
-    let item = getAll(obj)[0].values.find(o => o[0] === name);
-    if (!item) return 0;
-    let totalNo = 0;
-    let no = 0;
-
-    for (const property of Object.keys(obj)) {
-        let array = item[indices[property]];
-        totalNo += array.filter(o => obj[property].includes(o)).length;
-        no += obj[property].length;
-    }
-    if (no === 0) return 0;
-    return totalNo / no;
-}
-
-nlp.addWords({
-    'prime minister':    'Title',
-    'vice president':    'Title',
-    'attorney general':  'Title',
-    'foreign minister':  'Title',
-    'crown prince':      'Title',
-    'field marshal':     'Title',
-    'managing director': 'Title',
-    'venture capitalist':'Title',
-    'chief rabbi':       'Title',
-    'dalai lama':        'Title',
-    'chief minister':    'Title',
-    'finance minister':  'Title',
-    'defence minister':  'Title',
-    'co-founder':    'Title',
-    'chief executive officer':  'Title',
-    'racing driver': 'Title',
-    'soccer player': 'Title',
-    'association football player': 'Title',
-    'rapper': 'Title',
-})
-
-const keywords = [
-    // music
-    "rapper", "singer", "songwriter", "musician", "composer", "producer",
-    "guitarist", "drummer", "pianist", "violinist", "conductor", "dj",
-    // sports
-    "footballer", "boxer", "wrestler", "swimmer", "cyclist", "skater",
-    "gymnast", "golfer", "cricketer", "racing driver", "soccer player",
-    // film/tv
-    "actor", "actress", "director", "screenwriter", "comedian", "filmmaker",
-    // writing
-    "novelist", "poet", "journalist", "playwright", "essayist", "author",
-    // visual
-    "painter", "sculptor", "photographer", "illustrator", "architect",
-    // science/academia
-    "physicist", "chemist", "biologist", "mathematician", "philosopher",
-    "historian", "economist", "psychologist",
-    // business/politics
-    "entrepreneur", "investor", "activist", "diplomat", "lawyer", "judge",
-    // misc
-    "model", "chef", "astronaut", "explorer", "inventor",
-]
 
 export async function init(){
     console.log("initializing");
@@ -163,48 +103,4 @@ export function getPopular(property, obj){
         }
     }
     return result;
-}
-
-export function getDesc(descList) {
-    let QList = []
-    let PList = []
-
-    for (const person of descList) {
-        let desc = person.desc.toLowerCase()
-        let matching = keywords.filter(kw => {
-            let re = new RegExp(`\\b${kw}\\b`, 'i')
-            if (!re.test(desc)) return false
-            if (obj.occupationLabel.includes(kw)) return false
-            if (obj.occupationLabel.includes(`NOT ${kw}`)) return false
-            return true
-        })
-        let entry = {name: person.person, indices: [], yes: 0, sitelinks: (person.sitelinks ?? 0) * (1 + match(person.person))}
-
-        for (const kw of matching){
-            let q = `is your character a ${kw}?`
-            if (!QList.includes(q)){
-                QList.push(q)
-            }
-            let index = QList.indexOf(q)
-            if (!entry.indices.includes(index)) entry.indices.push(index)
-        }
-
-        PList.push(entry)
-    }
-
-    for (const person of descList){
-        if (!person.occupations) continue
-        let entry = PList.find(p => p.name === person.person)
-        if (!entry) continue
-        for (let i = 0; i < QList.length; i++){
-            let phrase = QList[i].replace("is your character a ", "").replace("?", "")
-            if (person.occupations.includes(phrase)){
-                if (!entry.indices.includes(i)){
-                    entry.indices.push(i)
-                }
-            }
-        }
-    }
-
-    return { QList, PList }
 }
