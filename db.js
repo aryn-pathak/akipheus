@@ -12,6 +12,43 @@ const indices = {
     'P':11,
     'field':12
 }
+import nlp from 'https://esm.sh/compromise';
+
+function match(name) {
+    let item = getAll(obj)[0].values.find(o => o[0] === name);
+    if (!item) return 0;
+    let totalNo = 0;
+    let no = 0;
+
+    for (const property of Object.keys(obj)) {
+        let array = item[indices[property]];
+        totalNo += array.filter(o => obj[property].includes(o)).length;
+        no += obj[property].length;
+    }
+    if (no === 0) return 0;
+    return totalNo / no;
+}
+
+nlp.addWords({
+    'prime minister':    'Title',
+    'vice president':    'Title',
+    'attorney general':  'Title',
+    'foreign minister':  'Title',
+    'crown prince':      'Title',
+    'field marshal':     'Title',
+    'managing director': 'Title',
+    'venture capitalist':'Title',
+    'chief rabbi':       'Title',
+    'dalai lama':        'Title',
+    'chief minister':    'Title',
+    'finance minister':  'Title',
+    'defence minister':  'Title',
+    'co-founder':    'Title',
+    'chief executive officer':  'Title',
+    'racing driver': 'Title',
+    'soccer player': 'Title',
+    'association football player': 'Title',
+})
 
 export async function init(){
     console.log("initializing");
@@ -103,4 +140,70 @@ export function getPopular(property, obj){
         }
     }
     return result;
+}
+
+export function getDesc(descList){
+    let QList = []
+    let PList = []
+
+    for (const person of descList){
+        let desc = nlp(person.desc)
+        desc.match('#Demonym').remove()
+
+        let nouns = desc.nouns().out('array').filter(phrase => {
+            let words = phrase.split(' ');
+            return !words.some(word =>
+                obj.occupationLabel.includes(word) ||
+                obj.occupationLabel.includes(`NOT ${word}`)
+            );
+        })
+
+        let organisations = desc.organizations().out('array').filter(phrase => {
+            let words = phrase.split(' ');
+            return !words.some(word =>
+                obj.employer.includes(word) ||
+                obj.employer.includes(`NOT ${word}`)
+            );
+        })
+
+        console.log(person.person, { nouns, organisations, sitelinks: person.sitelinks })
+
+        let entry = { name: person.person, indices: [], yes: 0, match: match(person.person), sitelinks: person.sitelinks ?? 0 }
+
+        for (const noun of nouns){
+            let q = `is your character a ${noun}?`
+            if (!QList.includes(q)){
+                QList.push(q)
+            }
+            let index = QList.indexOf(q)
+            if (!entry.indices.includes(index)) entry.indices.push(index)
+        }
+
+        for (const org of organisations){
+            let q = `is your character associated with ${org}?`
+            if (!QList.includes(q)){
+                QList.push(q)
+            }
+            let index = QList.indexOf(q)
+            if (!entry.indices.includes(index)) entry.indices.push(index)
+        }
+
+        PList.push(entry)
+    }
+
+    for (const person of descList){
+        if (!person.occupations) continue
+        let entry = PList.find(p => p.name === person.person)
+        if (!entry) continue
+        for (let i = 0; i < QList.length; i++){
+            let phrase = QList[i].replace("is your character a ", "").replace("?", "")
+            if (person.occupations.includes(phrase)){
+                if (!entry.indices.includes(i)){
+                    entry.indices.push(i)
+                }
+            }
+        }
+    }
+
+    return { QList, PList }
 }
