@@ -1,3 +1,6 @@
+<p align = "center"><img width="462" height="209" alt="Screenshot 2026-04-28 at 11 26 34 AM" src="https://github.com/user-attachments/assets/a944cf1d-0590-4fc7-a9f9-1530025cdd38" />
+</p>
+
 # [Akipheus](https://aryn-pathak.github.io/akipheus/) | Open source akinator-style game with Wikidata's knowledge base
 ### NOTE: Akipheus is only as good as wikidata's entries, which is open to anyone for editing. there may be inaccurate/highly specific (less commonly known) information which can break the game. If not working, check out [this](https://youtu.be/HIcR5R7A1MA) video with some demos!
 ### How it works:
