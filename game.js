@@ -37,7 +37,9 @@ async function getQuestion() {
         let yes = getAll(people)[0]?.values.length ?? 0
         people = {...obj, [property]: obj[property].concat("NOT " + popular)}
         let no = getAll(people)[0]?.values.length ?? 0
-        let effect = (getAll(obj)[0]?.values.length ?? 0) - ((yes + no) / 2)
+        let total = getAll(obj)[0]?.values.length ?? 0
+        if (yes === 0 || yes === total) continue
+        let effect = total - ((yes + no) / 2)
         effect = effect / (1 + obj[property].length)
 
         if (effect > highEffect) {
@@ -55,16 +57,16 @@ async function getQuestion() {
         for (const person of getAll(obj)[0].values) {
             descList.push({'person': person[0], 'desc': person[1], 'sitelinks': person[10]})
         }
-
         let title = getTitle(descList)
+        if (!effectProperty) return "none"
         if (title) {
             question.innerHTML = `is your character a ${title}?`
             let answer = await waitForClick()
             if (answer === "yes") obj.personDescription.push(title)
             else obj.personDescription.push("NOT " + title)
+
             return "ask"
         }
-
         return effectProperty
     } else {
         return effectProperty

@@ -22,7 +22,6 @@ export async function init(){
     const SQL = await initSqlJs({
         locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.12.0/${file}`
     });
-
     const response = await fetch("humansClean.db")
     const buffer = await response.arrayBuffer();
     db = new SQL.Database(new Uint8Array(buffer));
