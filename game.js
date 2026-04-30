@@ -118,6 +118,6 @@ async function generate() {
 init().then(() => {
     yesButton.style.display = "none";
     noButton.style.display = "none";
-    alert("note for flavortown voters: akipheus is only as good as wikidata's data, which is often inaccurate. If you find that it doesn't work properly, check out the demo video. Thanks for trying out Akipheus!")
+    alert("note for flavortown voters: akipheus is only as good as wikidata's data, which is often inaccurate. If you find that it doesn't work properly, check out the demo video. Also check out README.md for storytelling and how akipheus works (very interesting!) Thanks for trying out Akipheus!")
     start.addEventListener("click", generate)
 });
