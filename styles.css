@@ -6,10 +6,12 @@
 }
 img {
     position: relative;
-    right: -500px;
+    /*right: -500px;*/
     width: 30%;
-    margin-top: 50px;
-    margin-bottom: -70px;
+    /*margin-top: 50px;*/
+    /*margin-bottom: -70px;*/
+    margin: auto;
+    display: block;
 }
 body{
     background-color: #FFEF91
