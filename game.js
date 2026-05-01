@@ -24,11 +24,16 @@ function waitForClick() {
 }
 
 async function getQuestion() {
-    let effectProperty;
-    let highEffect = -Infinity;
-
     if (obj.special.includes("employed") && !properties.includes("employer")) properties.push("employer")
     if (obj.special.includes("politician") && !properties.includes("politicalParty")) properties.push("politicalParty")
+
+    const baseResult = getAll(obj)
+    const total = baseResult[0]?.values.length ?? 0
+    if (total === 0) return "none"
+    if (total === 1) return "complete"
+
+    let effectProperty;
+    let highEffect = -Infinity;
 
     for (const property of properties) {
         let popular = getPopular(property, obj)
@@ -37,7 +42,6 @@ async function getQuestion() {
         let yes = getAll(people)[0]?.values.length ?? 0
         people = {...obj, [property]: obj[property].concat("NOT " + popular)}
         let no = getAll(people)[0]?.values.length ?? 0
-        let total = getAll(obj)[0]?.values.length ?? 0
         if (yes === 0 || yes === total) continue
         let effect = total - ((yes + no) / 2)
         effect = effect / (1 + obj[property].length)
@@ -48,29 +52,23 @@ async function getQuestion() {
         }
     }
 
-    if (getAll(obj)[0].values.length === 1) {
-        return "complete"
-    } else if (getAll(obj)[0].values.length === 0) {
-        return "none"
-    } else if (highEffect <= 5) {
+    if (highEffect <= 5) {
         let descList = []
-        for (const person of getAll(obj)[0].values) {
+        for (const person of baseResult[0].values) {
             descList.push({'person': person[0], 'desc': person[1], 'sitelinks': person[10]})
         }
         let title = getTitle(descList)
-        if (!effectProperty) return "none"
         if (title) {
             question.innerHTML = `is your character a ${title}?`
             let answer = await waitForClick()
             if (answer === "yes") obj.personDescription.push(title)
             else obj.personDescription.push("NOT " + title)
-
             return "ask"
         }
-        return effectProperty
-    } else {
+        if (!effectProperty) return "none"
         return effectProperty
     }
+    return effectProperty
 }
 
 async function special() {
@@ -88,30 +86,49 @@ async function special() {
 }
 
 async function generate() {
-    yesButton.style.display = "";
-    noButton.style.display = "";
-    start.style.display = "none";
+    try {
+        yesButton.style.display = "";
+        noButton.style.display = "";
+        start.style.display = "none";
 
-    await special()
-    let property = await getQuestion();
+        await special()
+        let property = await getQuestion();
 
-    if (property === "complete") {
-        question.innerHTML = "you're thinking of " + getAll(obj)[0].values[0][0] + "!"
+        if (property === "complete") {
+            const result = getAll(obj)
+            const name = result[0]?.values[0]?.[0] ?? "someone"
+            question.innerHTML = "you're thinking of " + name + "!"
+            yesButton.style.display = "none"
+            noButton.style.display = "none"
+        } else if (property === "none" || !property) {
+            question.innerHTML = "sorry, I couldn't guess your character :("
+            yesButton.style.display = "none"
+            noButton.style.display = "none"
+        } else if (property === "ask") {
+            await generate()
+        } else if (property in statements) {
+            let value = getPopular(property, obj)
+            if (!value) {
+                question.innerHTML = "sorry, I couldn't guess your character :("
+                yesButton.style.display = "none"
+                noButton.style.display = "none"
+                return
+            }
+            question.innerHTML = statements[property] + value + "?"
+            const answer = await waitForClick();
+            if (answer === "yes") { obj[property].push(value) }
+            else { obj[property].push("NOT " + value) }
+            await generate();
+        } else {
+            question.innerHTML = "sorry, I couldn't guess your character :("
+            yesButton.style.display = "none"
+            noButton.style.display = "none"
+        }
+    } catch (err) {
+        console.error("akipheus error:", err)
+        question.innerHTML = "something went wrong :( (check the console)"
         yesButton.style.display = "none"
         noButton.style.display = "none"
-    } else if (property === "none") {
-        question.innerHTML = "sorry, I couldn't guess your character :("
-        yesButton.style.display = "none"
-        noButton.style.display = "none"
-    } else if (property === "ask") {
-        await generate()
-    } else if (property in statements) {
-        let value = getPopular(property, obj)
-        question.innerHTML = statements[property] + value + "?"
-        const answer = await waitForClick();
-        if (answer === "yes") { obj[property].push(value) }
-        else { obj[property].push("NOT " + value) }
-        await generate();
     }
 }
 

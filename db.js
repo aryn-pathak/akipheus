@@ -17,6 +17,11 @@ const keywords = [
     "prime minister", "foreign minister", "finance minister", "defence minister", "chief minister", "mayor", "vice president", "king", "the Pope", "chief executive officer", "ceo", "founder", "co-founder",
     "chairman", "chairperson", "chairwoman", "president", "minister",
 ]
+
+function escapeSql(s) {
+    return String(s).replace(/'/g, "''");
+}
+
 export async function init(){
     console.log("initializing");
     const SQL = await initSqlJs({
@@ -34,12 +39,12 @@ export function getAll(o) {
         for (let filter of o[key]) {
             if (key === "personDescription") {
                 if (filter.startsWith("NOT "))
-                    query += ` AND personDescription NOT LIKE '%${filter.slice(4)}%'`
-                else query += ` AND personDescription LIKE '%${filter}%'`
+                    query += ` AND personDescription NOT LIKE '%${escapeSql(filter.slice(4))}%'`
+                else query += ` AND personDescription LIKE '%${escapeSql(filter)}%'`
             } else {
                 if (filter.startsWith("NOT "))
-                    query += ` AND ${key} NOT LIKE '%"${filter.slice(4)}"%'`;
-                else query += ` AND ${key} LIKE '%"${filter}"%'`;
+                    query += ` AND ${key} NOT LIKE '%"${escapeSql(filter.slice(4))}"%'`;
+                else query += ` AND ${key} LIKE '%"${escapeSql(filter)}"%'`;
             }
         }
     }
@@ -66,7 +71,11 @@ function bayesian(M, S, R){
 }
 
 export function getPopular(property, obj){
-    let people = getAll(obj)[0].values
+    let result = getAll(obj)
+    if (!result || result.length === 0) return ""
+    let people = result[0].values
+    if (!people || people.length === 0) return ""
+
     let raw = []
     people.forEach((item) => {
         let values = item[indices[property]] || []
@@ -74,6 +83,8 @@ export function getPopular(property, obj){
             raw.push({"name": value, "P": item[indices.P]})
         }
     })
+
+    if (raw.length === 0) return ""
 
     let unique = []
     raw.forEach((item) => {
@@ -102,16 +113,16 @@ export function getPopular(property, obj){
 
     aggregate.sort((a, b) => b.B - a.B)
 
-    let result = ""
+    let out = ""
     for (let i = 0; i < aggregate.length; i++){
         if (obj[property].includes(aggregate[i].name) ||
             obj[property].includes("NOT " + aggregate[i].name)) {
         } else {
-            result = aggregate[i].name;
+            out = aggregate[i].name;
             break;
         }
     }
-    return result;
+    return out;
 }
 
 export function getTitle(descList) {
